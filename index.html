@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Четвертные оценки</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #eef4ff;
+      color: #17233c;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(100%, 560px);
+      padding: 32px;
+      border-radius: 20px;
+      background: white;
+      box-shadow: 0 12px 40px #294b8520;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #2864d7;
+      text-align: center;
+    }
+
+    .description {
+      color: #52617a;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin: 24px 0 8px;
+      font-weight: bold;
+    }
+
+    input,
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    input {
+      border: 1px solid #bdc9dc;
+    }
+
+    button {
+      margin-top: 12px;
+      border: 0;
+      background: #2864d7;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d50b4;
+    }
+
+    #result {
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+
+    #result h2 {
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      color: #68758a;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .error {
+      color: #b42318;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Добро пожаловать в четвертные оценки!</h1>
+    <p class="description">
+      Напиши свои оценки — я посчитаю средний балл и четвертную оценку.
+    </p>
+
+    <form id="gradeForm">
+      <label for="grades">Твои оценки</label>
+      <input
+        id="grades"
+        type="text"
+        placeholder="Например: 5, 4, 3, 5"
+        autocomplete="off"
+      >
+      <button type="submit">Посчитать</button>
+    </form>
+
+    <section id="result" aria-live="polite"></section>
+
+    <p class="hint">
+      Расчёт примерный: все оценки считаются одинаково важными.
+      Для каждой цели предполагается, что следующие оценки будут именно такими.
+    </p>
+  </main>
+
+  <script>
+    const form = document.querySelector("#gradeForm");
+    const input = document.querySelector("#grades");
+    const result = document.querySelector("#result");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const parts = input.value.trim().split(/[,\s;]+/).filter(Boolean);
+      const grades = parts.map(Number);
+
+      if (
+        grades.length === 0 ||
+        grades.some((grade) => !Number.isInteger(grade) || grade < 2 || grade > 5)
+      ) {
+        result.innerHTML =
+          '<p class="error">Введи оценки целыми числами от 2 до 5, например: 5, 4, 3.</p>';
+        return;
+      }
+
+      const sum = grades.reduce((total, grade) => total + grade, 0);
+      const average = sum / grades.length;
+      const quarterGrade = Math.round(average);
+
+      const formatNumber = (number) =>
+        number.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+
+      const goals = [5, 4, 3, 2];
+      const goalLines = goals.map((goal) => {
+        const threshold = goal - 0.5;
+
+        if (average >= threshold) {
+          return `<li>Для оценки ${goal}: уже выходит ${goal} или выше.</li>`;
+        }
+
+        const needed = Math.ceil(
+          (threshold * grades.length - sum) / (goal - threshold) - 1e-10
+        );
+
+        return `<li>Для оценки ${goal}: нужно получить ещё ${needed} оценок ${goal}.</li>`;
+      });
+
+      result.innerHTML = `
+        <h2>Результат</h2>
+        <p>Средний балл: <strong>${formatNumber(average)}</strong></p>
+        <p>Примерная четвертная оценка: <strong>${quarterGrade}</strong></p>
+        <h3>Сколько оценок нужно получить</h3>
+        <ul>${goalLines.join("")}</ul>
+      `;
+    });
+  </script>
+</body>
+</html>
