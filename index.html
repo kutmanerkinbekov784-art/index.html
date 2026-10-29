@@ -58,6 +58,31 @@
       border: 1px solid #bdc9dc;
     }
 
+    .grade-entry {
+      display: flex;
+      gap: 8px;
+    }
+
+    .grade-entry input {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .camera-button {
+      width: 52px;
+      flex: 0 0 52px;
+      margin: 0;
+      padding: 10px;
+      display: grid;
+      place-items: center;
+    }
+
+    .camera-button svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
     button {
       margin-top: 12px;
       border: 0;
@@ -86,6 +111,10 @@
       line-height: 1.5;
     }
 
+    #ocrStatus {
+      margin: 8px 0 0;
+    }
+
     .error {
       color: #b42318;
       font-weight: bold;
@@ -101,12 +130,35 @@
 
     <form id="gradeForm">
       <label for="grades">Твои оценки</label>
-      <input
-        id="grades"
-        type="text"
-        placeholder="Например: 5, 4, 3, 5"
-        autocomplete="off"
-      >
+      <div class="grade-entry">
+        <input
+          id="grades"
+          type="text"
+          placeholder="Например: 5, 4, 3, 5"
+          autocomplete="off"
+        >
+        <input
+          id="gradePhoto"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-label="Выбрать или сфотографировать оценки"
+          hidden
+        >
+        <button
+          id="cameraButton"
+          class="camera-button"
+          type="button"
+          aria-label="Сфотографировать или выбрать оценки"
+          title="Сфотографировать или выбрать оценки"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+          </svg>
+        </button>
+      </div>
+      <p class="hint">Сфотографируй оценки или выбери фото. Проверь распознанные оценки в поле перед расчётом.</p>
+      <p id="ocrStatus" class="hint" role="status" aria-live="polite"></p>
       <button type="submit">Посчитать</button>
     </form>
 
@@ -122,6 +174,56 @@
     const form = document.querySelector("#gradeForm");
     const input = document.querySelector("#grades");
     const result = document.querySelector("#result");
+    const photoInput = document.querySelector("#gradePhoto");
+    const cameraButton = document.querySelector("#cameraButton");
+    const ocrStatus = document.querySelector("#ocrStatus");
+    let tesseractPromise;
+
+    cameraButton.addEventListener("click", () => photoInput.click());
+
+    photoInput.addEventListener("change", async () => {
+      const image = photoInput.files[0];
+      if (!image) return;
+
+      cameraButton.disabled = true;
+      ocrStatus.classList.remove("error");
+      ocrStatus.textContent = "Распознаю оценки на фото…";
+      result.replaceChildren();
+
+      try {
+        if (!window.Tesseract) {
+          if (!tesseractPromise) {
+            tesseractPromise = new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+              script.onload = resolve;
+              script.onerror = () => reject(new Error("Не удалось загрузить распознавание текста."));
+              document.head.append(script);
+            }).catch((error) => {
+              tesseractPromise = null;
+              throw error;
+            });
+          }
+          await tesseractPromise;
+        }
+
+        const { data: { text } } = await window.Tesseract.recognize(image, "eng");
+        const grades = text.match(/\b[2-5]\b/g) || [];
+
+        if (grades.length === 0) {
+          throw new Error("Не удалось найти оценки от 2 до 5. Попробуй другое, более чёткое фото.");
+        }
+
+        input.value = grades.join(", ");
+        ocrStatus.textContent = `Распознано: ${grades.join(", ")}. Проверь оценки и нажми «Посчитать».`;
+      } catch (error) {
+        ocrStatus.classList.add("error");
+        ocrStatus.textContent = error.message || "Не удалось распознать оценки. Попробуй другое фото.";
+      } finally {
+        cameraButton.disabled = false;
+        photoInput.value = "";
+      }
+    });
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
