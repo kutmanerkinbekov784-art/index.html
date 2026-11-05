@@ -3,71 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Четвертные оценки</title>
+  <meta name="theme-color" content="#eef4ff">
+  <title>Помощник по учёбе</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      padding: 32px 16px;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
       background: #eef4ff;
       color: #17233c;
       font-family: Arial, sans-serif;
     }
 
-    main {
-      width: min(100%, 560px);
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .site-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px max(16px, calc((100% - 1040px) / 2));
+      background: white;
+      box-shadow: 0 2px 12px #294b8512;
+    }
+
+    .brand { color: #2864d7; font-weight: bold; }
+    .menu-toggle {
+      display: none;
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #bdc9dc;
+      border-radius: 9px;
+      background: white;
+      color: #17233c;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .site-nav { display: flex; gap: 8px; }
+    .nav-button, .secondary-button {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #34425b;
+      font-weight: bold;
+    }
+    .nav-button[aria-current="page"] { background: #e8f0ff; color: #2058bf; }
+
+    .page {
+      width: min(100% - 32px, 760px);
+      margin: 32px auto;
       padding: 32px;
       border-radius: 20px;
       background: white;
       box-shadow: 0 12px 40px #294b8520;
     }
 
-    h1 {
-      margin-top: 0;
-      color: #2864d7;
-      text-align: center;
-    }
-
-    .description {
-      color: #52617a;
-      text-align: center;
-      line-height: 1.5;
-    }
-
-    label {
-      display: block;
-      margin: 24px 0 8px;
-      font-weight: bold;
-    }
-
-    input,
-    button {
+    h1 { margin-top: 0; color: #2864d7; text-align: center; }
+    h2 { color: #2864d7; }
+    .description { color: #52617a; text-align: center; line-height: 1.5; }
+    label { display: block; margin: 20px 0 8px; font-weight: bold; }
+    input, .text-input {
       width: 100%;
       padding: 14px;
-      border-radius: 10px;
-      font-size: 16px;
-    }
-
-    input {
       border: 1px solid #bdc9dc;
+      border-radius: 10px;
+      background: white;
+      color: #17233c;
     }
-
-    .grade-entry {
-      display: flex;
-      gap: 8px;
+    textarea { min-height: 110px; resize: vertical; }
+    button.primary-button, form button[type="submit"] {
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      border: 0;
+      border-radius: 10px;
+      background: #2864d7;
+      color: white;
+      font-weight: bold;
     }
+    button.primary-button:hover, form button[type="submit"]:hover { background: #1d50b4; }
+    button:disabled { cursor: wait; opacity: .65; }
+    .secondary-button { border: 1px solid #bdc9dc; background: white; }
+    .hint { color: #68758a; font-size: 14px; line-height: 1.5; }
+    .error { color: #b42318; font-weight: bold; }
+    .success { color: #167347; }
+    [hidden] { display: none !important; }
 
-    .grade-entry input {
-      min-width: 0;
-      flex: 1;
-    }
-
+    .auth-box { max-width: 430px; margin: 24px auto 0; }
+    .auth-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+    .auth-actions button { width: auto; margin: 0; }
+    .account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .account-row p { min-width: 0; overflow-wrap: anywhere; }
+    .account-row .secondary-button { flex: 0 0 auto; }
+    .chat-log { display: grid; gap: 12px; margin: 20px 0; }
+    .chat-message { padding: 14px 16px; border-radius: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+    .chat-message.assistant { background: #f0f5ff; }
+    .chat-message.user { margin-left: 12%; background: #e8f0ff; white-space: pre-wrap; }
+    .chat-message p { margin: 0; white-space: pre-wrap; }
+    .chat-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .chat-tools button { width: auto; }
+    .quiz-box { margin-top: 18px; padding: 16px; border: 1px solid #d5e0f2; border-radius: 12px; }
+    .quiz-option { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-weight: normal; }
+    .quiz-option input { width: auto; margin: 2px 0 0; }
+    .grade-entry { display: flex; gap: 8px; }
+    .grade-entry input { min-width: 0; flex: 1; }
     .camera-button {
       width: 52px;
       flex: 0 0 52px;
@@ -75,121 +123,137 @@
       padding: 10px;
       display: grid;
       place-items: center;
-    }
-
-    .camera-button svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-    }
-
-    button {
-      margin-top: 12px;
       border: 0;
+      border-radius: 10px;
       background: #2864d7;
       color: white;
-      font-weight: bold;
-      cursor: pointer;
     }
+    .camera-button svg { width: 22px; height: 22px; fill: currentColor; }
+    #gradeResult { margin-top: 24px; line-height: 1.6; }
+    #ocrStatus { margin: 8px 0 0; }
 
-    button:hover {
-      background: #1d50b4;
-    }
-
-    #result {
-      margin-top: 24px;
-      line-height: 1.6;
-    }
-
-    #result h2 {
-      margin-bottom: 8px;
-    }
-
-    .hint {
-      color: #68758a;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    #ocrStatus {
-      margin: 8px 0 0;
-    }
-
-    .error {
-      color: #b42318;
-      font-weight: bold;
+    @media (max-width: 620px) {
+      .site-header { flex-wrap: wrap; }
+      .menu-toggle { display: block; }
+      .site-nav { display: none; flex: 1 0 100%; flex-direction: column; padding-top: 8px; }
+      .site-nav.open { display: flex; }
+      .nav-button { width: 100%; text-align: left; }
+      .page { margin: 18px auto; padding: 24px 18px; border-radius: 16px; }
     }
   </style>
 </head>
 <body>
+  <header class="site-header">
+    <span class="brand">Помощник по учёбе</span>
+    <button id="menuToggle" class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="siteNav">☰</button>
+    <nav id="siteNav" class="site-nav" aria-label="Разделы сайта">
+      <button class="nav-button" type="button" data-page="gradesPage" aria-current="false">Четвертные оценки</button>
+      <button class="nav-button" type="button" data-page="studyPage" aria-current="page">Помощник по учёбе</button>
+    </nav>
+  </header>
+
   <main>
-    <h1>Добро пожаловать в четвертные оценки!</h1>
-    <p class="description">
-      Напиши свои оценки — я посчитаю средний балл и четвертную оценку.
-    </p>
+    <section id="gradesPage" class="page" hidden>
+      <h1>Четвертные оценки</h1>
+      <p class="description">Напиши свои оценки — я посчитаю средний балл и четвертную оценку.</p>
+      <form id="gradeForm">
+        <label for="grades">Твои оценки</label>
+        <div class="grade-entry">
+          <input id="grades" type="text" placeholder="Например: 5, 4, 3, 5" autocomplete="off">
+          <input id="gradePhoto" type="file" accept="image/*" capture="environment" aria-label="Выбрать или сфотографировать оценки" hidden>
+          <button id="cameraButton" class="camera-button" type="button" aria-label="Сфотографировать или выбрать оценки" title="Сфотографировать или выбрать оценки">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>
+          </button>
+        </div>
+        <p class="hint">Сфотографируй оценки или выбери фото. Проверь распознанные оценки в поле перед расчётом.</p>
+        <p id="ocrStatus" class="hint" role="status" aria-live="polite"></p>
+        <button type="submit">Посчитать</button>
+      </form>
+      <section id="gradeResult" aria-live="polite"></section>
+      <p class="hint">Расчёт примерный: все оценки считаются одинаково важными. Для каждой цели предполагается, что следующие оценки будут именно такими.</p>
+    </section>
 
-    <form id="gradeForm">
-      <label for="grades">Твои оценки</label>
-      <div class="grade-entry">
-        <input
-          id="grades"
-          type="text"
-          placeholder="Например: 5, 4, 3, 5"
-          autocomplete="off"
-        >
-        <input
-          id="gradePhoto"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          aria-label="Выбрать или сфотографировать оценки"
-          hidden
-        >
-        <button
-          id="cameraButton"
-          class="camera-button"
-          type="button"
-          aria-label="Сфотографировать или выбрать оценки"
-          title="Сфотографировать или выбрать оценки"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
-          </svg>
-        </button>
-      </div>
-      <p class="hint">Сфотографируй оценки или выбери фото. Проверь распознанные оценки в поле перед расчётом.</p>
-      <p id="ocrStatus" class="hint" role="status" aria-live="polite"></p>
-      <button type="submit">Посчитать</button>
-    </form>
+    <section id="studyPage" class="page">
+      <h1>Помощник по учёбе</h1>
+      <p class="description">Привет, ученик или студент, я твой ИИ-помощник по учёбе. Разберём задачу так, чтобы ты понял тему и смог решить похожие сам.</p>
 
-    <section id="result" aria-live="polite"></section>
+      <section id="authPanel" class="auth-box" aria-label="Вход в аккаунт">
+        <p id="configNotice" class="hint" role="status">Проверяю подключение…</p>
+        <form id="authForm">
+          <label for="email">Электронная почта</label>
+          <input id="email" type="email" autocomplete="email" required>
+          <label for="password">Пароль</label>
+          <input id="password" type="password" autocomplete="current-password" minlength="6" required>
+          <button id="authSubmit" type="submit" disabled>Войти</button>
+        </form>
+        <div class="auth-actions">
+          <button id="authModeToggle" class="secondary-button" type="button" disabled>Создать аккаунт</button>
+          <span id="authStatus" class="hint" role="status" aria-live="polite"></span>
+        </div>
+      </section>
 
-    <p class="hint">
-      Расчёт примерный: все оценки считаются одинаково важными.
-      Для каждой цели предполагается, что следующие оценки будут именно такими.
-    </p>
+      <section id="studyPanel" hidden>
+        <div class="account-row">
+          <p id="accountLabel" class="hint"></p>
+          <button id="logoutButton" class="secondary-button" type="button">Выйти</button>
+        </div>
+        <div id="chatLog" class="chat-log" role="log" aria-live="polite">
+          <div class="chat-message assistant"><p>Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.</p></div>
+        </div>
+        <form id="studyForm">
+          <label for="problem">Твоя задача или вопрос</label>
+          <textarea id="problem" class="text-input" maxlength="4000" required placeholder="Например: реши уравнение 3x + 5 = 20 и объясни каждый шаг"></textarea>
+          <button id="sendButton" type="submit">Объясни по шагам</button>
+        </form>
+        <div class="chat-tools">
+          <button id="videoButton" class="secondary-button" type="button" disabled>Найти видео на YouTube</button>
+          <button id="quizButton" class="secondary-button" type="button" disabled>Приступим к тесту по этой теме</button>
+        </div>
+        <p id="studyStatus" class="hint" role="status" aria-live="polite"></p>
+        <section id="quizBox" class="quiz-box" aria-live="polite" hidden></section>
+      </section>
+    </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
   <script>
-    const form = document.querySelector("#gradeForm");
-    const input = document.querySelector("#grades");
-    const result = document.querySelector("#result");
+    const menuToggle = document.querySelector("#menuToggle");
+    const siteNav = document.querySelector("#siteNav");
+    const navButtons = [...document.querySelectorAll(".nav-button")];
+    const pages = [...document.querySelectorAll("main > .page")];
+
+    function showPage(pageId) {
+      pages.forEach((page) => { page.hidden = page.id !== pageId; });
+      navButtons.forEach((button) => {
+        button.setAttribute("aria-current", button.dataset.page === pageId ? "page" : "false");
+      });
+      siteNav.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+    }
+
+    navButtons.forEach((button) => button.addEventListener("click", () => showPage(button.dataset.page)));
+    menuToggle.addEventListener("click", () => {
+      const isOpen = siteNav.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    const gradeForm = document.querySelector("#gradeForm");
+    const gradeInput = document.querySelector("#grades");
+    const gradeResult = document.querySelector("#gradeResult");
     const photoInput = document.querySelector("#gradePhoto");
     const cameraButton = document.querySelector("#cameraButton");
     const ocrStatus = document.querySelector("#ocrStatus");
     let tesseractPromise;
 
     cameraButton.addEventListener("click", () => photoInput.click());
-
     photoInput.addEventListener("change", async () => {
       const image = photoInput.files[0];
       if (!image) return;
-
       cameraButton.disabled = true;
       ocrStatus.classList.remove("error");
       ocrStatus.textContent = "Распознаю оценки на фото…";
-      result.replaceChildren();
-
+      gradeResult.replaceChildren();
       try {
         if (!window.Tesseract) {
           if (!tesseractPromise) {
@@ -199,22 +263,14 @@
               script.onload = resolve;
               script.onerror = () => reject(new Error("Не удалось загрузить распознавание текста."));
               document.head.append(script);
-            }).catch((error) => {
-              tesseractPromise = null;
-              throw error;
-            });
+            }).catch((error) => { tesseractPromise = null; throw error; });
           }
           await tesseractPromise;
         }
-
         const { data: { text } } = await window.Tesseract.recognize(image, "eng");
         const grades = text.match(/\b[2-5]\b/g) || [];
-
-        if (grades.length === 0) {
-          throw new Error("Не удалось найти оценки от 2 до 5. Попробуй другое, более чёткое фото.");
-        }
-
-        input.value = grades.join(", ");
+        if (grades.length === 0) throw new Error("Не удалось найти оценки от 2 до 5. Попробуй другое, более чёткое фото.");
+        gradeInput.value = grades.join(", ");
         ocrStatus.textContent = `Распознано: ${grades.join(", ")}. Проверь оценки и нажми «Посчитать».`;
       } catch (error) {
         ocrStatus.classList.add("error");
@@ -225,44 +281,25 @@
       }
     });
 
-    form.addEventListener("submit", (event) => {
+    gradeForm.addEventListener("submit", (event) => {
       event.preventDefault();
-
-      const parts = input.value.trim().split(/[,\s;]+/).filter(Boolean);
+      const parts = gradeInput.value.trim().split(/[,\s;]+/).filter(Boolean);
       const grades = parts.map(Number);
-
-      if (
-        grades.length === 0 ||
-        grades.some((grade) => !Number.isInteger(grade) || grade < 2 || grade > 5)
-      ) {
-        result.innerHTML =
-          '<p class="error">Введи оценки целыми числами от 2 до 5, например: 5, 4, 3.</p>';
+      if (grades.length === 0 || grades.some((grade) => !Number.isInteger(grade) || grade < 2 || grade > 5)) {
+        gradeResult.innerHTML = '<p class="error">Введи оценки целыми числами от 2 до 5, например: 5, 4, 3.</p>';
         return;
       }
-
       const sum = grades.reduce((total, grade) => total + grade, 0);
       const average = sum / grades.length;
       const quarterGrade = Math.round(average);
-
-      const formatNumber = (number) =>
-        number.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
-
-      const goals = [5, 4, 3, 2];
-      const goalLines = goals.map((goal) => {
+      const formatNumber = (number) => number.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+      const goalLines = [5, 4, 3, 2].map((goal) => {
         const threshold = goal - 0.5;
-
-        if (average >= threshold) {
-          return `<li>Для оценки ${goal}: уже выходит ${goal} или выше.</li>`;
-        }
-
-        const needed = Math.ceil(
-          (threshold * grades.length - sum) / (goal - threshold) - 1e-10
-        );
-
+        if (average >= threshold) return `<li>Для оценки ${goal}: уже выходит ${goal} или выше.</li>`;
+        const needed = Math.ceil((threshold * grades.length - sum) / (goal - threshold) - 1e-10);
         return `<li>Для оценки ${goal}: нужно получить ещё ${needed} оценок ${goal}.</li>`;
       });
-
-      result.innerHTML = `
+      gradeResult.innerHTML = `
         <h2>Результат</h2>
         <p>Средний балл: <strong>${formatNumber(average)}</strong></p>
         <p>Примерная четвертная оценка: <strong>${quarterGrade}</strong></p>
@@ -270,6 +307,272 @@
         <ul>${goalLines.join("")}</ul>
       `;
     });
+
+    const configNotice = document.querySelector("#configNotice");
+    const authForm = document.querySelector("#authForm");
+    const authSubmit = document.querySelector("#authSubmit");
+    const authModeToggle = document.querySelector("#authModeToggle");
+    const authStatus = document.querySelector("#authStatus");
+    const studyPanel = document.querySelector("#studyPanel");
+    const authPanel = document.querySelector("#authPanel");
+    const accountLabel = document.querySelector("#accountLabel");
+    const logoutButton = document.querySelector("#logoutButton");
+    const studyForm = document.querySelector("#studyForm");
+    const problemInput = document.querySelector("#problem");
+    const sendButton = document.querySelector("#sendButton");
+    const studyStatus = document.querySelector("#studyStatus");
+    const chatLog = document.querySelector("#chatLog");
+    const videoButton = document.querySelector("#videoButton");
+    const quizButton = document.querySelector("#quizButton");
+    const quizBox = document.querySelector("#quizBox");
+    let supabaseClient;
+    let isSignUp = false;
+    let lastProblem = "";
+    let conversationHistory = [];
+    let currentQuiz;
+
+    function setAuthStatus(message, isError = false) {
+      authStatus.textContent = message;
+      authStatus.classList.toggle("error", isError);
+      authStatus.classList.toggle("success", Boolean(message) && !isError);
+    }
+
+    function appendMessage(role, text) {
+      const message = document.createElement("div");
+      message.className = `chat-message ${role}`;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      message.append(paragraph);
+      chatLog.append(message);
+      message.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return message;
+    }
+
+    function showAccount(user) {
+      const signedIn = Boolean(user);
+      authPanel.hidden = signedIn;
+      studyPanel.hidden = !signedIn;
+      if (signedIn) accountLabel.textContent = `Ты вошёл как ${user.email}`;
+      else {
+        conversationHistory = [];
+        lastProblem = "";
+        currentQuiz = null;
+        videoButton.disabled = true;
+        quizButton.disabled = true;
+        quizBox.replaceChildren();
+        quizBox.hidden = true;
+        chatLog.replaceChildren();
+        appendMessage("assistant", "Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.");
+      }
+    }
+
+    async function invokeTutor(payload) {
+      if (!supabaseClient) throw new Error("Сначала настрой подключение Supabase. Инструкция есть в README.md.");
+      const { data, error } = await supabaseClient.functions.invoke("study-assistant", { body: payload });
+      if (error) {
+        let detail = error.message || "Ошибка вызова учебного помощника.";
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const body = await error.context.json();
+            if (body.error) detail = body.error;
+          }
+        } catch { /* Показываем исходное сообщение ошибки функции. */ }
+        throw new Error(detail);
+      }
+      if (!data) throw new Error("Сервер не вернул ответ. Попробуй ещё раз.");
+      return data;
+    }
+
+    if (!window.supabase) {
+      configNotice.textContent = "Не удалось загрузить библиотеку Supabase. Проверь подключение к интернету и попробуй обновить страницу.";
+      configNotice.classList.add("error");
+    } else if (!window.APP_CONFIG || !window.APP_CONFIG.supabaseUrl || !window.APP_CONFIG.supabaseAnonKey ||
+      window.APP_CONFIG.supabaseUrl.includes("YOUR_PROJECT") || window.APP_CONFIG.supabaseAnonKey.includes("YOUR_")) {
+      configNotice.textContent = "Подключение пока не настроено. Следуй инструкции в README.md: нужно указать URL проекта и публичный ключ Supabase.";
+      configNotice.classList.add("error");
+    } else {
+      try {
+        supabaseClient = window.supabase.createClient(window.APP_CONFIG.supabaseUrl, window.APP_CONFIG.supabaseAnonKey);
+        authSubmit.disabled = false;
+        authModeToggle.disabled = false;
+        configNotice.textContent = "Войди или создай аккаунт, чтобы начать заниматься.";
+        supabaseClient.auth.getSession().then(({ data, error }) => {
+          if (error) setAuthStatus(`Не удалось проверить вход: ${error.message}`, true);
+          showAccount(data && data.session ? data.session.user : null);
+        }).catch((error) => setAuthStatus(`Не удалось подключиться: ${error.message}`, true));
+        supabaseClient.auth.onAuthStateChange((_event, session) => showAccount(session ? session.user : null));
+      } catch (error) {
+        configNotice.textContent = `Не удалось подключить Supabase: ${error.message}`;
+        configNotice.classList.add("error");
+      }
+    }
+
+    authModeToggle.addEventListener("click", () => {
+      isSignUp = !isSignUp;
+      authSubmit.textContent = isSignUp ? "Создать аккаунт" : "Войти";
+      authModeToggle.textContent = isSignUp ? "Уже есть аккаунт? Войти" : "Создать аккаунт";
+      document.querySelector("#password").autocomplete = isSignUp ? "new-password" : "current-password";
+      setAuthStatus("");
+    });
+
+    authForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!supabaseClient) return;
+      authSubmit.disabled = true;
+      authModeToggle.disabled = true;
+      setAuthStatus(isSignUp ? "Создаю аккаунт…" : "Выполняю вход…");
+      const credentials = {
+        email: document.querySelector("#email").value.trim(),
+        password: document.querySelector("#password").value
+      };
+      try {
+        const result = isSignUp
+          ? await supabaseClient.auth.signUp(credentials)
+          : await supabaseClient.auth.signInWithPassword(credentials);
+        if (result.error) throw result.error;
+        if (isSignUp && result.data.user && !result.data.session) {
+          setAuthStatus("Аккаунт создан. Проверь почту и подтверди адрес, затем войди.");
+        } else {
+          setAuthStatus(isSignUp ? "Аккаунт создан." : "Вход выполнен.");
+          showAccount(result.data.user);
+        }
+      } catch (error) {
+        setAuthStatus(`Не удалось ${isSignUp ? "создать аккаунт" : "войти"}: ${error.message}`, true);
+      } finally {
+        authSubmit.disabled = false;
+        authModeToggle.disabled = false;
+      }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      logoutButton.disabled = true;
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        showAccount(null);
+        setAuthStatus("Ты вышел из аккаунта.");
+      } catch (error) {
+        studyStatus.textContent = `Не удалось выйти: ${error.message}`;
+        studyStatus.classList.add("error");
+      } finally {
+        logoutButton.disabled = false;
+      }
+    });
+
+    studyForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const problem = problemInput.value.trim();
+      if (!problem) return;
+      lastProblem = problem;
+      sendButton.disabled = true;
+      videoButton.disabled = true;
+      quizButton.disabled = true;
+      quizBox.hidden = true;
+      studyStatus.classList.remove("error");
+      studyStatus.textContent = "Подбираю объяснение…";
+      appendMessage("user", problem);
+      try {
+        const answer = await invokeTutor({ mode: "explain", problem, history: conversationHistory.slice(-8) });
+        if (typeof answer.text !== "string" || !answer.text.trim()) throw new Error("В ответе помощника нет текста.");
+        appendMessage("assistant", answer.text);
+        conversationHistory.push({ role: "user", text: problem }, { role: "model", text: answer.text });
+        problemInput.value = "";
+        videoButton.disabled = false;
+        quizButton.disabled = false;
+        studyStatus.textContent = "Объяснение готово. Можно задать следующий вопрос, найти видео или пройти тест.";
+      } catch (error) {
+        studyStatus.textContent = `Не получилось получить объяснение: ${error.message}`;
+        studyStatus.classList.add("error");
+      } finally {
+        sendButton.disabled = false;
+      }
+    });
+
+    videoButton.addEventListener("click", () => {
+      if (!lastProblem) return;
+      const query = encodeURIComponent(`${lastProblem} объяснение`);
+      window.open(`https://www.youtube.com/results?search_query=${query}`, "_blank", "noopener,noreferrer");
+    });
+
+    quizButton.addEventListener("click", async () => {
+      if (!lastProblem) return;
+      quizButton.disabled = true;
+      studyStatus.classList.remove("error");
+      studyStatus.textContent = "Готовлю короткий тест по теме…";
+      quizBox.hidden = true;
+      try {
+        const quiz = await invokeTutor({ mode: "quiz", problem: lastProblem });
+        if (typeof quiz.question !== "string" || !Array.isArray(quiz.options) || quiz.options.length !== 4 ||
+          !quiz.options.every((option) => typeof option === "string") || typeof quiz.quizToken !== "string") {
+          throw new Error("Не удалось подготовить корректный тест. Попробуй ещё раз.");
+        }
+        currentQuiz = quiz;
+        quizBox.replaceChildren();
+        const title = document.createElement("h2");
+        title.textContent = "Проверь себя";
+        const question = document.createElement("p");
+        question.textContent = quiz.question;
+        const form = document.createElement("form");
+        form.id = "quizForm";
+        quiz.options.forEach((option, index) => {
+          const label = document.createElement("label");
+          label.className = "quiz-option";
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "quizAnswer";
+          radio.value = String(index);
+          radio.required = true;
+          const text = document.createElement("span");
+          text.textContent = option;
+          label.append(radio, text);
+          form.append(label);
+        });
+        const submit = document.createElement("button");
+        submit.className = "primary-button";
+        submit.textContent = "Проверить ответ";
+        form.append(submit);
+        form.addEventListener("submit", submitQuizAnswer);
+        quizBox.append(title, question, form);
+        quizBox.hidden = false;
+        studyStatus.textContent = "Выбери один ответ — я объясню результат.";
+      } catch (error) {
+        studyStatus.textContent = `Не удалось подготовить тест: ${error.message}`;
+        studyStatus.classList.add("error");
+      } finally {
+        quizButton.disabled = false;
+      }
+    });
+
+    async function submitQuizAnswer(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const selected = form.querySelector('input[name="quizAnswer"]:checked');
+      if (!selected || !currentQuiz) return;
+      const submit = form.querySelector("button");
+      submit.disabled = true;
+      studyStatus.textContent = "Проверяю ответ…";
+      try {
+        const result = await invokeTutor({
+          mode: "grade",
+          quizToken: currentQuiz.quizToken,
+          selectedIndex: Number(selected.value)
+        });
+        if (typeof result.correct !== "boolean" || typeof result.feedback !== "string" || typeof result.explanation !== "string") {
+          throw new Error("Не удалось проверить ответ. Попробуй ещё раз.");
+        }
+        const feedback = document.createElement("p");
+        feedback.className = result.correct ? "success" : "error";
+        feedback.textContent = result.correct ? "Верно! " + result.feedback : "Пока неверно. " + result.feedback;
+        const explanation = document.createElement("p");
+        explanation.textContent = result.explanation;
+        quizBox.append(feedback, explanation);
+        studyStatus.textContent = "Тест проверен.";
+      } catch (error) {
+        studyStatus.textContent = `Не удалось проверить ответ: ${error.message}`;
+        studyStatus.classList.add("error");
+        submit.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>
