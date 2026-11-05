@@ -129,8 +129,68 @@
       color: white;
     }
     .camera-button svg { width: 22px; height: 22px; fill: currentColor; }
+    .crop-dialog {
+      width: min(94vw, 680px);
+      max-width: none;
+      max-height: 92dvh;
+      padding: 22px;
+      overflow: auto;
+      border: 0;
+      border-radius: 16px;
+      color: #17233c;
+    }
+    .crop-dialog::backdrop { background: #101828a8; }
+    .crop-dialog h2 { margin: 0 0 8px; color: #2864d7; }
+    .crop-dialog p { margin: 0 0 16px; }
+    .crop-viewport {
+      display: flex;
+      max-height: 58vh;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #18243a;
+    }
+    .crop-image-wrapper {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      line-height: 0;
+      touch-action: none;
+      user-select: none;
+    }
+    #photoPreview { display: block; max-width: 100%; max-height: 58vh; }
+    .crop-selection {
+      position: absolute;
+      border: 2px solid #fff;
+      background: #2864d724;
+      box-shadow: 0 0 0 100vmax #10182885;
+      cursor: move;
+      touch-action: none;
+    }
+    .crop-handle {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #2864d7;
+      border-radius: 50%;
+      background: white;
+      touch-action: none;
+    }
+    .crop-handle-nw { top: -11px; left: -11px; cursor: nwse-resize; }
+    .crop-handle-ne { top: -11px; right: -11px; cursor: nesw-resize; }
+    .crop-handle-sw { bottom: -11px; left: -11px; cursor: nesw-resize; }
+    .crop-handle-se { right: -11px; bottom: -11px; cursor: nwse-resize; }
+    .crop-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .crop-actions button { margin-top: 0; }
+    .crop-actions .secondary-button { border: 1px solid #bdc9dc; background: white; color: #17233c; }
+    .crop-actions .secondary-button:hover { background: #eef4ff; }
     #gradeResult { margin-top: 24px; line-height: 1.6; }
     #ocrStatus { margin: 8px 0 0; }
+
+    @media (max-width: 420px) {
+      .crop-dialog { padding: 18px; }
+      .crop-actions { flex-direction: column-reverse; }
+    }
 
     @media (max-width: 620px) {
       .site-header { flex-wrap: wrap; }
@@ -165,10 +225,29 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>
           </button>
         </div>
-        <p class="hint">Сфотографируй оценки или выбери фото. Проверь распознанные оценки в поле перед расчётом.</p>
+        <p class="hint">Сфотографируй оценки или выбери фото, затем обведи нужную строку. Проверь распознанные оценки в поле перед расчётом.</p>
         <p id="ocrStatus" class="hint" role="status" aria-live="polite"></p>
         <button type="submit">Посчитать</button>
       </form>
+      <dialog id="cropDialog" class="crop-dialog" aria-labelledby="cropTitle">
+        <h2 id="cropTitle">Выбери строку с оценками</h2>
+        <p class="hint">Передвинь рамку на нужную строку. Потяни за уголки, чтобы убрать лишнее.</p>
+        <div class="crop-viewport">
+          <div id="cropImageWrapper" class="crop-image-wrapper">
+            <img id="photoPreview" alt="Выбранное фото оценок">
+            <div id="cropSelection" class="crop-selection" aria-label="Область для распознавания">
+              <span class="crop-handle crop-handle-nw" data-handle="nw"></span>
+              <span class="crop-handle crop-handle-ne" data-handle="ne"></span>
+              <span class="crop-handle crop-handle-sw" data-handle="sw"></span>
+              <span class="crop-handle crop-handle-se" data-handle="se"></span>
+            </div>
+          </div>
+        </div>
+        <div class="crop-actions">
+          <button id="cancelCrop" class="secondary-button" type="button">Назад</button>
+          <button id="recognizeCrop" type="button">Распознать область</button>
+        </div>
+      </dialog>
       <section id="gradeResult" aria-live="polite"></section>
       <p class="hint">Расчёт примерный: все оценки считаются одинаково важными. Для каждой цели предполагается, что следующие оценки будут именно такими.</p>
     </section>
@@ -244,40 +323,167 @@
     const photoInput = document.querySelector("#gradePhoto");
     const cameraButton = document.querySelector("#cameraButton");
     const ocrStatus = document.querySelector("#ocrStatus");
+    const cropDialog = document.querySelector("#cropDialog");
+    const cropImageWrapper = document.querySelector("#cropImageWrapper");
+    const photoPreview = document.querySelector("#photoPreview");
+    const cropSelection = document.querySelector("#cropSelection");
+    const recognizeCropButton = document.querySelector("#recognizeCrop");
+    let photoUrl;
     let tesseractPromise;
 
-    cameraButton.addEventListener("click", () => photoInput.click());
+    const cropArea = { left: 0.08, top: 0.25, width: 0.84, height: 0.5 };
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    function renderCropArea() {
+      cropSelection.style.left = `${cropArea.left * 100}%`;
+      cropSelection.style.top = `${cropArea.top * 100}%`;
+      cropSelection.style.width = `${cropArea.width * 100}%`;
+      cropSelection.style.height = `${cropArea.height * 100}%`;
+    }
+
+    function loadTesseract() {
+      if (window.Tesseract) return Promise.resolve();
+      if (!tesseractPromise) {
+        tesseractPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+          script.onload = () => window.Tesseract
+            ? resolve()
+            : reject(new Error("Не удалось загрузить распознавание текста."));
+          script.onerror = () => reject(new Error("Не удалось загрузить распознавание текста. Проверь подключение к интернету."));
+          document.head.append(script);
+        }).catch((error) => { tesseractPromise = null; throw error; });
+      }
+      return tesseractPromise;
+    }
+
+    async function getCroppedImage() {
+      const sourceX = Math.round(cropArea.left * photoPreview.naturalWidth);
+      const sourceY = Math.round(cropArea.top * photoPreview.naturalHeight);
+      const sourceWidth = Math.round(cropArea.width * photoPreview.naturalWidth);
+      const sourceHeight = Math.round(cropArea.height * photoPreview.naturalHeight);
+      const scale = Math.min(2, 1400 / sourceWidth, 2600 / sourceHeight);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(sourceWidth * scale);
+      canvas.height = Math.round(sourceHeight * scale);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Не удалось подготовить выбранную область фото.");
+      context.drawImage(photoPreview, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => blob
+          ? resolve(blob)
+          : reject(new Error("Не удалось подготовить выбранную область фото.")), "image/jpeg", 0.95);
+      });
+    }
+
+    cameraButton.addEventListener("click", () => {
+      ocrStatus.classList.remove("error");
+      ocrStatus.textContent = "Выбери фото или сделай снимок, затем обведи строку с оценками.";
+      photoInput.click();
+    });
+
     photoInput.addEventListener("change", async () => {
       const image = photoInput.files[0];
+      photoInput.value = "";
       if (!image) return;
-      cameraButton.disabled = true;
-      ocrStatus.classList.remove("error");
-      ocrStatus.textContent = "Распознаю оценки на фото…";
-      gradeResult.replaceChildren();
       try {
-        if (!window.Tesseract) {
-          if (!tesseractPromise) {
-            tesseractPromise = new Promise((resolve, reject) => {
-              const script = document.createElement("script");
-              script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-              script.onload = resolve;
-              script.onerror = () => reject(new Error("Не удалось загрузить распознавание текста."));
-              document.head.append(script);
-            }).catch((error) => { tesseractPromise = null; throw error; });
-          }
-          await tesseractPromise;
+        if (!image.type.startsWith("image/")) throw new Error("Выбери файл изображения.");
+        if (photoUrl) URL.revokeObjectURL(photoUrl);
+        photoUrl = URL.createObjectURL(image);
+        photoPreview.src = photoUrl;
+        await photoPreview.decode();
+        cropArea.left = 0.08;
+        cropArea.top = 0.25;
+        cropArea.width = 0.84;
+        cropArea.height = 0.5;
+        renderCropArea();
+        cropDialog.showModal();
+        ocrStatus.textContent = "";
+      } catch (error) {
+        if (photoUrl) URL.revokeObjectURL(photoUrl);
+        photoUrl = null;
+        photoPreview.removeAttribute("src");
+        ocrStatus.classList.add("error");
+        ocrStatus.textContent = error.message || "Не удалось открыть фото. Попробуй выбрать другое изображение.";
+      }
+    });
+
+    cropDialog.addEventListener("close", () => {
+      if (photoUrl) URL.revokeObjectURL(photoUrl);
+      photoUrl = null;
+      photoPreview.removeAttribute("src");
+    });
+
+    document.querySelector("#cancelCrop").addEventListener("click", () => cropDialog.close());
+
+    cropSelection.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      const handle = event.target.closest("[data-handle]")?.dataset.handle || "move";
+      const start = { ...cropArea, x: event.clientX, y: event.clientY };
+      const bounds = cropImageWrapper.getBoundingClientRect();
+      cropSelection.setPointerCapture(event.pointerId);
+
+      function moveSelection(moveEvent) {
+        const dx = (moveEvent.clientX - start.x) / bounds.width;
+        const dy = (moveEvent.clientY - start.y) / bounds.height;
+        const minWidth = 0.06;
+        const minHeight = 0.06;
+        let left = start.left;
+        let top = start.top;
+        let right = start.left + start.width;
+        let bottom = start.top + start.height;
+        if (handle === "move") {
+          left = clamp(start.left + dx, 0, 1 - start.width);
+          top = clamp(start.top + dy, 0, 1 - start.height);
+        } else {
+          if (handle.includes("w")) left = clamp(start.left + dx, 0, right - minWidth);
+          if (handle.includes("e")) right = clamp(start.left + start.width + dx, left + minWidth, 1);
+          if (handle.includes("n")) top = clamp(start.top + dy, 0, bottom - minHeight);
+          if (handle.includes("s")) bottom = clamp(start.top + start.height + dy, top + minHeight, 1);
+          cropArea.left = left;
+          cropArea.top = top;
+          cropArea.width = right - left;
+          cropArea.height = bottom - top;
         }
-        const { data: { text } } = await window.Tesseract.recognize(image, "eng");
+        if (handle === "move") {
+          cropArea.left = left;
+          cropArea.top = top;
+        }
+        renderCropArea();
+      }
+
+      function stopMoving() {
+        cropSelection.removeEventListener("pointermove", moveSelection);
+        cropSelection.removeEventListener("pointerup", stopMoving);
+        cropSelection.removeEventListener("pointercancel", stopMoving);
+      }
+
+      cropSelection.addEventListener("pointermove", moveSelection);
+      cropSelection.addEventListener("pointerup", stopMoving);
+      cropSelection.addEventListener("pointercancel", stopMoving);
+    });
+
+    recognizeCropButton.addEventListener("click", async () => {
+      recognizeCropButton.disabled = true;
+      try {
+        const croppedImage = await getCroppedImage();
+        cropDialog.close();
+        cameraButton.disabled = true;
+        ocrStatus.classList.remove("error");
+        ocrStatus.textContent = "Распознаю оценки в выбранной области…";
+        gradeResult.replaceChildren();
+        await loadTesseract();
+        const { data: { text } } = await window.Tesseract.recognize(croppedImage, "eng");
         const grades = text.match(/\b[2-5]\b/g) || [];
-        if (grades.length === 0) throw new Error("Не удалось найти оценки от 2 до 5. Попробуй другое, более чёткое фото.");
+        if (grades.length === 0) throw new Error("В этой области не нашлись оценки от 2 до 5. Попробуй обвести строку точнее.");
         gradeInput.value = grades.join(", ");
-        ocrStatus.textContent = `Распознано: ${grades.join(", ")}. Проверь оценки и нажми «Посчитать».`;
+        ocrStatus.textContent = `Распознано: ${grades.join(", ")}. Проверь оценки в поле и нажми «Посчитать».`;
       } catch (error) {
         ocrStatus.classList.add("error");
-        ocrStatus.textContent = error.message || "Не удалось распознать оценки. Попробуй другое фото.";
+        ocrStatus.textContent = error.message || "Не удалось распознать фото. Попробуй ещё раз.";
       } finally {
+        recognizeCropButton.disabled = false;
         cameraButton.disabled = false;
-        photoInput.value = "";
       }
     });
 
