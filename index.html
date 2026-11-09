@@ -114,82 +114,98 @@
     .quiz-box { margin-top: 18px; padding: 16px; border: 1px solid #d5e0f2; border-radius: 12px; }
     .quiz-option { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-weight: normal; }
     .quiz-option input { width: auto; margin: 2px 0 0; }
-    .grade-entry { display: flex; gap: 8px; }
-    .grade-entry input { min-width: 0; flex: 1; }
-    .camera-button {
-      width: 52px;
-      flex: 0 0 52px;
-      margin: 0;
-      padding: 10px;
-      display: grid;
-      place-items: center;
-      border: 0;
-      border-radius: 10px;
-      background: #2864d7;
-      color: white;
-    }
-    .camera-button svg { width: 22px; height: 22px; fill: currentColor; }
-    .crop-dialog {
-      width: min(94vw, 680px);
-      max-width: none;
-      max-height: 92dvh;
-      padding: 22px;
-      overflow: auto;
-      border: 0;
-      border-radius: 16px;
-      color: #17233c;
-    }
-    .crop-dialog::backdrop { background: #101828a8; }
-    .crop-dialog h2 { margin: 0 0 8px; color: #2864d7; }
-    .crop-dialog p { margin: 0 0 16px; }
-    .crop-viewport {
+    .grade-chat-log {
       display: flex;
-      max-height: 58vh;
-      justify-content: center;
-      overflow: hidden;
+      min-height: 220px;
+      max-height: 48vh;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      margin: 20px 0 12px;
+      padding: 14px;
+      border: 1px solid #e0e8f4;
+      border-radius: 14px;
+      background: #f7f9fd;
+    }
+    .grade-message {
+      max-width: 88%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .grade-message p { margin: 0; white-space: pre-wrap; }
+    .grade-message.assistant { align-self: flex-start; background: white; box-shadow: 0 2px 8px #294b8514; }
+    .grade-message.user { align-self: flex-end; background: #e8f0ff; white-space: pre-wrap; }
+    .grade-message img {
+      display: block;
+      width: min(100%, 300px);
+      max-height: 220px;
+      margin-top: 8px;
       border-radius: 8px;
-      background: #18243a;
+      object-fit: contain;
+      object-position: left;
+      background: #e8edf5;
     }
-    .crop-image-wrapper {
-      position: relative;
-      display: inline-block;
-      max-width: 100%;
-      line-height: 0;
-      touch-action: none;
-      user-select: none;
+    .grade-composer { margin-top: 12px; }
+    .grade-composer-row { display: flex; align-items: flex-end; gap: 8px; }
+    .grade-composer textarea {
+      min-width: 0;
+      min-height: 50px;
+      max-height: 140px;
+      flex: 1;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #bdc9dc;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 16px;
     }
-    #photoPreview { display: block; max-width: 100%; max-height: 58vh; }
-    .crop-selection {
-      position: absolute;
-      border: 2px solid #fff;
-      background: #2864d724;
-      box-shadow: 0 0 0 100vmax #10182885;
-      cursor: move;
-      touch-action: none;
+    .grade-icon-button {
+      display: grid;
+      width: 50px;
+      height: 50px;
+      flex: 0 0 50px;
+      place-items: center;
+      margin: 0;
+      padding: 11px;
     }
-    .crop-handle {
-      position: absolute;
-      width: 22px;
-      height: 22px;
-      border: 2px solid #2864d7;
-      border-radius: 50%;
-      background: white;
-      touch-action: none;
+    .grade-icon-button svg { width: 22px; height: 22px; fill: currentColor; }
+    .grade-send-button {
+      width: auto !important;
+      height: 50px;
+      flex: 0 0 auto;
+      margin: 0 !important;
+      padding: 0 16px !important;
     }
-    .crop-handle-nw { top: -11px; left: -11px; cursor: nwse-resize; }
-    .crop-handle-ne { top: -11px; right: -11px; cursor: nesw-resize; }
-    .crop-handle-sw { bottom: -11px; left: -11px; cursor: nesw-resize; }
-    .crop-handle-se { right: -11px; bottom: -11px; cursor: nwse-resize; }
-    .crop-actions { display: flex; gap: 10px; margin-top: 16px; }
-    .crop-actions button { margin-top: 0; }
-    .crop-actions .secondary-button { border: 1px solid #bdc9dc; background: white; color: #17233c; }
-    .crop-actions .secondary-button:hover { background: #eef4ff; }
+    .grade-attachment {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 8px;
+      border: 1px solid #bdc9dc;
+      border-radius: 10px;
+      background: #f7f9fd;
+    }
+    .grade-attachment img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+    .grade-attachment-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grade-review { display: grid; gap: 10px; margin-top: 12px; }
+    .grade-review-row { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1.4fr) auto; gap: 8px; align-items: end; }
+    .grade-review-field label { margin: 0 0 4px; font-size: 14px; }
+    .grade-review-field input { min-width: 0; padding: 10px; }
+    .grade-review-row .secondary-button { padding: 10px; }
+    .grade-confirm-button { width: auto !important; justify-self: start; }
+    .grade-result-card { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e0e8f4; }
+    .grade-result-card p { margin: 4px 0; }
     #gradeResult { margin-top: 24px; line-height: 1.6; }
-    #ocrStatus { margin: 8px 0 0; }
 
-    @media (max-width: 420px) {
-      .crop-dialog { padding: 18px; }
-      .crop-actions { flex-direction: column-reverse; }
+    @media (max-width: 480px) {
+      .grade-chat-log { min-height: 200px; max-height: 52vh; padding: 10px; }
+      .grade-review-row { grid-template-columns: 1fr; }
+      .grade-review-row .secondary-button { justify-self: start; }
+      .grade-send-button { width: 50px !important; padding: 0 !important; font-size: 0; }
+      .grade-send-button::before { content: "➤"; font-size: 20px; }
     }
 
     @media (max-width: 620px) {
@@ -215,41 +231,32 @@
   <main>
     <section id="gradesPage" class="page" hidden>
       <h1>Четвертные оценки</h1>
-      <p class="description">Напиши свои оценки — я посчитаю средний балл и четвертную оценку.</p>
-      <form id="gradeForm">
-        <label for="grades">Твои оценки</label>
-        <div class="grade-entry">
-          <input id="grades" type="text" placeholder="Например: 5, 4, 3, 5" autocomplete="off">
-          <input id="gradePhoto" type="file" accept="image/*" capture="environment" aria-label="Выбрать или сфотографировать оценки" hidden>
-          <button id="cameraButton" class="camera-button" type="button" aria-label="Сфотографировать или выбрать оценки" title="Сфотографировать или выбрать оценки">
+      <p class="description">Напиши, какой предмет посчитать, или попроси посчитать всё. Можно прикрепить фото дневника.</p>
+      <div id="gradeChatLog" class="grade-chat-log" role="log" aria-live="polite" aria-label="Чат по оценкам">
+        <div class="grade-message assistant">
+          <p>Привет! Пришли чёткое фото дневника или напиши оценки через пробел: <strong>5 4 3</strong>.
+            Примеры: «Посчитай русский» или «Посчитай все оценки». На фото предмет и его оценки лучше расположить в одной строке.</p>
+        </div>
+      </div>
+      <section id="gradeReview" class="grade-review" aria-label="Проверка распознанных предметов и оценок" hidden></section>
+      <form id="gradeChatForm" class="grade-composer">
+        <div id="gradeAttachment" class="grade-attachment" hidden>
+          <img id="gradeAttachmentThumbnail" alt="Выбранное фото">
+          <span id="gradeAttachmentName" class="grade-attachment-name"></span>
+          <button id="removeGradeAttachment" class="secondary-button" type="button">Убрать</button>
+        </div>
+        <div class="grade-composer-row">
+          <input id="gradePhoto" type="file" accept="image/*" aria-label="Выбрать фото из галереи или сделать снимок" hidden>
+          <button id="gradePhotoButton" class="grade-icon-button" type="button" aria-label="Прикрепить фото из галереи или камеры" title="Фото из галереи или камеры">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>
           </button>
+          <textarea id="gradeMessage" rows="1" maxlength="1000" placeholder="Например: посчитай всё" aria-label="Сообщение помощнику по оценкам"></textarea>
+          <button id="gradeSendButton" class="grade-send-button" type="submit">Отправить</button>
         </div>
-        <p class="hint">Сфотографируй оценки или выбери фото, затем обведи нужную строку. Проверь распознанные оценки в поле перед расчётом.</p>
-        <p id="ocrStatus" class="hint" role="status" aria-live="polite"></p>
-        <button type="submit">Посчитать</button>
       </form>
-      <dialog id="cropDialog" class="crop-dialog" aria-labelledby="cropTitle">
-        <h2 id="cropTitle">Выбери строку с оценками</h2>
-        <p class="hint">Передвинь рамку на нужную строку. Потяни за уголки, чтобы убрать лишнее.</p>
-        <div class="crop-viewport">
-          <div id="cropImageWrapper" class="crop-image-wrapper">
-            <img id="photoPreview" alt="Выбранное фото оценок">
-            <div id="cropSelection" class="crop-selection" aria-label="Область для распознавания">
-              <span class="crop-handle crop-handle-nw" data-handle="nw"></span>
-              <span class="crop-handle crop-handle-ne" data-handle="ne"></span>
-              <span class="crop-handle crop-handle-sw" data-handle="sw"></span>
-              <span class="crop-handle crop-handle-se" data-handle="se"></span>
-            </div>
-          </div>
-        </div>
-        <div class="crop-actions">
-          <button id="cancelCrop" class="secondary-button" type="button">Назад</button>
-          <button id="recognizeCrop" type="button">Распознать область</button>
-        </div>
-      </dialog>
+      <p id="gradeStatus" class="hint" role="status" aria-live="polite"></p>
       <section id="gradeResult" aria-live="polite"></section>
-      <p class="hint">Расчёт примерный: все оценки считаются одинаково важными. Для каждой цели предполагается, что следующие оценки будут именно такими.</p>
+      <p class="hint">Фото обрабатывается в этом браузере и не отправляется ИИ-сервису. Перед подсчётом проверь распознанные оценки. Для повышения предполагается, что следующие оценки будут целевого балла.</p>
     </section>
 
     <section id="studyPage" class="page">
@@ -317,28 +324,356 @@
       menuToggle.setAttribute("aria-expanded", String(isOpen));
     });
 
-    const gradeForm = document.querySelector("#gradeForm");
-    const gradeInput = document.querySelector("#grades");
+    const gradeChatLog = document.querySelector("#gradeChatLog");
+    const gradeChatForm = document.querySelector("#gradeChatForm");
+    const gradeMessage = document.querySelector("#gradeMessage");
+    const gradePhoto = document.querySelector("#gradePhoto");
+    const gradePhotoButton = document.querySelector("#gradePhotoButton");
+    const gradeSendButton = document.querySelector("#gradeSendButton");
+    const gradeAttachment = document.querySelector("#gradeAttachment");
+    const gradeAttachmentThumbnail = document.querySelector("#gradeAttachmentThumbnail");
+    const gradeAttachmentName = document.querySelector("#gradeAttachmentName");
+    const gradeReview = document.querySelector("#gradeReview");
     const gradeResult = document.querySelector("#gradeResult");
-    const photoInput = document.querySelector("#gradePhoto");
-    const cameraButton = document.querySelector("#cameraButton");
-    const ocrStatus = document.querySelector("#ocrStatus");
-    const cropDialog = document.querySelector("#cropDialog");
-    const cropImageWrapper = document.querySelector("#cropImageWrapper");
-    const photoPreview = document.querySelector("#photoPreview");
-    const cropSelection = document.querySelector("#cropSelection");
-    const recognizeCropButton = document.querySelector("#recognizeCrop");
-    let photoUrl;
+    const gradeStatus = document.querySelector("#gradeStatus");
+    let pendingPhoto;
+    let pendingPhotoUrl;
+    let currentGradeRows = [];
+    let pendingGradeIntent = "";
     let tesseractPromise;
 
-    const cropArea = { left: 0.08, top: 0.25, width: 0.84, height: 0.5 };
-    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    function appendGradeMessage(role, text, imageUrl) {
+      const message = document.createElement("div");
+      message.className = `grade-message ${role}`;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      message.append(paragraph);
+      if (imageUrl) {
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = "Фото оценок в чате";
+        message.append(image);
+      }
+      gradeChatLog.append(message);
+      gradeChatLog.scrollTop = gradeChatLog.scrollHeight;
+      return message;
+    }
 
-    function renderCropArea() {
-      cropSelection.style.left = `${cropArea.left * 100}%`;
-      cropSelection.style.top = `${cropArea.top * 100}%`;
-      cropSelection.style.width = `${cropArea.width * 100}%`;
-      cropSelection.style.height = `${cropArea.height * 100}%`;
+    function setGradeStatus(text, isError = false) {
+      gradeStatus.textContent = text;
+      gradeStatus.classList.toggle("error", isError);
+    }
+
+    function extractGrades(text) {
+      return [...text.matchAll(/(?<![\d.,])[2-5](?![\d.,])/g)].map((match) => Number(match[0]));
+    }
+
+    function cleanSubject(text) {
+      return text
+        .replace(/(?<![\d.,])[2-5](?![\d.,])/g, " ")
+        .replace(/[^\p{L}\s-]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function addOrMergeRow(rows, subject, grades) {
+      const name = subject || "Предмет (укажи название)";
+      const key = name.toLocaleLowerCase("ru").replace(/[^\p{L}]/gu, "");
+      const existing = rows.find((row) =>
+        row.subject.toLocaleLowerCase("ru").replace(/[^\p{L}]/gu, "") === key
+      );
+      if (existing) existing.grades.push(...grades);
+      else rows.push({ subject: name, grades });
+    }
+
+    function parseOcrRows(data) {
+      const lines = Array.isArray(data.lines)
+        ? data.lines.map((line) => line.text)
+        : String(data.text || "").split(/\r?\n/);
+      const rows = [];
+      let pendingSubject = "";
+
+      for (const line of lines) {
+        const grades = extractGrades(line);
+        const subject = cleanSubject(line);
+        if (grades.length && subject) {
+          addOrMergeRow(rows, subject, grades);
+          pendingSubject = "";
+        } else if (grades.length && pendingSubject) {
+          addOrMergeRow(rows, pendingSubject, grades);
+          pendingSubject = "";
+        } else if (subject) {
+          pendingSubject = subject;
+        }
+      }
+
+      if (rows.length === 0) {
+        const grades = extractGrades(String(data.text || lines.join(" ")));
+        if (grades.length) addOrMergeRow(rows, "", grades);
+      }
+      return rows;
+    }
+
+    function parseManualRows(text) {
+      const rawGrades = text.replace(/[^\d.,\s]/gu, " ").trim().replace(/\s+/g, " ");
+      const gradeTokens = rawGrades.split(/\s+/).filter(Boolean);
+      if (!gradeTokens.length) return [];
+      let subjectText = text;
+      const separator = text.indexOf(":");
+      if (separator >= 0) {
+        subjectText = text.slice(0, separator);
+      } else {
+        subjectText = cleanSubject(text);
+        subjectText = subjectText.replace(
+          /^(?:(?:посчитай|посчитать|рассчитай|рассчитать|подсчитай|вычисли|пожалуйста|оценки|оценку|средний|среднее|балл|баллы|по|все|всё)\s*)+/i,
+          ""
+        );
+        subjectText = subjectText.replace(
+          /\b(?:посчитай|посчитать|рассчитай|рассчитать|подсчитай|вычисли|пожалуйста|оценки|оценку|средний|среднее|балл|баллы|по|все|всё)\b/gi,
+          " "
+        );
+      }
+      const subject = cleanSubject(subjectText) || "Предмет (укажи название)";
+      return [{ subject, grades: gradeTokens.map(Number), rawGrades }];
+    }
+
+    function normalizeWords(text) {
+      return text.toLocaleLowerCase("ru").match(/[\p{L}]+/gu) || [];
+    }
+
+    function findSubjectRows(message, rows) {
+      const ignoredWords = new Set([
+        "посчитай", "посчитать", "рассчитай", "рассчитать", "подсчитай", "вычисли",
+        "пожалуйста", "оценки", "оценку", "оценок", "средний", "среднее",
+        "балл", "баллы", "по", "для", "мои", "мне", "нужно", "сколько"
+      ]);
+      const queryWords = normalizeWords(message).filter((word) => !ignoredWords.has(word));
+
+      return rows.filter((row) => {
+        const subjectWords = normalizeWords(row.subject);
+        return queryWords.some((queryWord) => subjectWords.some((subjectWord) => {
+          const length = Math.min(queryWord.length, subjectWord.length);
+          const prefixLength = Math.min(5, length);
+          return prefixLength >= 4 && queryWord.slice(0, prefixLength) === subjectWord.slice(0, prefixLength);
+        }));
+      });
+    }
+
+    function formatGradeAverage(number) {
+      return number.toLocaleString("ru-RU", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function gradeWord(count) {
+      const lastTwoDigits = count % 100;
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return "оценок";
+      if (count % 10 === 1) return "оценку";
+      if (count % 10 >= 2 && count % 10 <= 4) return "оценки";
+      return "оценок";
+    }
+
+    function gradeRowsWord(count) {
+      const lastTwoDigits = count % 100;
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return "строк";
+      if (count % 10 === 1) return "строку";
+      if (count % 10 >= 2 && count % 10 <= 4) return "строки";
+      return "строк";
+    }
+
+    function calculateRows(rows) {
+      gradeResult.replaceChildren();
+      const results = [];
+
+      for (const row of rows) {
+        if (!row.grades.length || row.grades.some((grade) =>
+          !Number.isInteger(grade) || grade < 2 || grade > 5
+        )) {
+          appendGradeMessage("assistant", `Проверь оценки по предмету «${row.subject}». Допустимы целые числа от 2 до 5, разделённые пробелами.`);
+          return;
+        }
+
+        const sum = row.grades.reduce((total, grade) => total + grade, 0);
+        const average = sum / row.grades.length;
+        const currentGrade = Math.round(average);
+        const targetGrade = Math.min(5, currentGrade + 1);
+        let needed = 0;
+        if (targetGrade > currentGrade) {
+          const threshold = targetGrade - 0.5;
+          needed = Math.max(0, Math.ceil(
+            (threshold * row.grades.length - sum) / (targetGrade - threshold) - 1e-10
+          ));
+        }
+
+        results.push({
+          subject: row.subject,
+          average,
+          currentGrade,
+          targetGrade,
+          needed
+        });
+      }
+
+      const title = document.createElement("h2");
+      title.textContent = rows.length > 1 ? "Результаты по предметам" : "Результат";
+      gradeResult.append(title);
+      for (const item of results) {
+        const card = document.createElement("article");
+        card.className = "grade-result-card";
+        const subject = document.createElement("h3");
+        subject.textContent = item.subject;
+        const average = document.createElement("p");
+        average.textContent = `Средний балл: ${formatGradeAverage(item.average)}. Примерная четвертная оценка: ${item.currentGrade}.`;
+        const target = document.createElement("p");
+        target.textContent = item.targetGrade === item.currentGrade
+          ? "Выше 5 получить нельзя — это максимальная оценка."
+          : `Чтобы повысить четвертную оценку на один балл, до ${item.targetGrade}, нужно получить ещё ${item.needed} ${gradeWord(item.needed)} ${item.targetGrade}.`;
+        card.append(subject, average, target);
+        gradeResult.append(card);
+      }
+      appendGradeMessage("assistant", "Готово! Расчёт примерный: все оценки считаются одинаково важными.");
+      gradeResult.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    function handleGradeIntent(message, rows = currentGradeRows) {
+      if (!gradeReview.hidden) {
+        const reviewedRows = collectGradeReviewRows();
+        const invalid = reviewedRows.find((row) =>
+          !row.subject || !row.rawGrades || row.tokens.some((token) => !/^[2-5]$/.test(token))
+        );
+        if (invalid) {
+          appendGradeMessage("assistant", "Сначала исправь предметы и оценки в таблице: числа должны быть от 2 до 5 и разделены пробелами.");
+          return;
+        }
+        rows = reviewedRows.map(({ subject, grades }) => ({ subject, grades }));
+        currentGradeRows = rows;
+        gradeReview.hidden = true;
+      }
+
+      if (!rows.length) {
+        appendGradeMessage("assistant", "Сначала пришли фото оценок или напиши их через пробел, например: «Русский: 5 4 3».");
+        return;
+      }
+
+      const matchingRows = findSubjectRows(message, rows);
+      if (matchingRows.length) {
+        calculateRows(matchingRows);
+        return;
+      }
+
+      const words = new Set(normalizeWords(message));
+      const wantsAll = ["все", "всё", "всех", "всем", "предметы", "предметам", "каждый", "каждую"]
+        .some((word) => words.has(word));
+      if (wantsAll) {
+        calculateRows(rows);
+        return;
+      }
+
+      if (rows.length === 1) {
+        calculateRows(rows);
+        return;
+      }
+
+      appendGradeMessage("assistant", "Я не понял, какой предмет нужен. Напиши, например, «Посчитай русский» или «Посчитай все оценки».");
+    }
+
+    function renderGradeReview(rows, intent) {
+      currentGradeRows = rows.map((row) => ({ subject: row.subject, grades: [...row.grades] }));
+      pendingGradeIntent = intent;
+      gradeReview.replaceChildren();
+      gradeReview.hidden = false;
+
+      const heading = document.createElement("h2");
+      heading.textContent = "Проверь распознанные данные";
+      const instruction = document.createElement("p");
+      instruction.className = "hint";
+      instruction.textContent = "Исправь ошибки распознавания. Оценки разделяй пробелами, не запятыми.";
+      gradeReview.append(heading, instruction);
+
+      rows.forEach((row, index) => {
+        const item = document.createElement("div");
+        item.className = "grade-review-row";
+        const subjectField = document.createElement("div");
+        subjectField.className = "grade-review-field";
+        const subjectLabel = document.createElement("label");
+        subjectLabel.htmlFor = `gradeSubject${index}`;
+        subjectLabel.textContent = "Предмет";
+        const subjectInput = document.createElement("input");
+        subjectInput.id = `gradeSubject${index}`;
+        subjectInput.value = row.subject;
+        subjectInput.dataset.row = String(index);
+        subjectInput.dataset.field = "subject";
+        subjectInput.setAttribute("aria-label", `Предмет в строке ${index + 1}`);
+        subjectField.append(subjectLabel, subjectInput);
+        const gradesField = document.createElement("div");
+        gradesField.className = "grade-review-field";
+        const gradesLabel = document.createElement("label");
+        gradesLabel.htmlFor = `gradeValues${index}`;
+        gradesLabel.textContent = "Оценки";
+        const gradesInput = document.createElement("input");
+        gradesInput.id = `gradeValues${index}`;
+        gradesInput.type = "text";
+        gradesInput.inputMode = "numeric";
+        gradesInput.value = row.rawGrades || row.grades.join(" ");
+        gradesInput.dataset.row = String(index);
+        gradesInput.dataset.field = "grades";
+        gradesInput.setAttribute("aria-label", `Оценки в строке ${index + 1}`);
+        gradesField.append(gradesLabel, gradesInput);
+        const removeRow = document.createElement("button");
+        removeRow.className = "secondary-button";
+        removeRow.type = "button";
+        removeRow.textContent = "Убрать";
+        removeRow.setAttribute("aria-label", `Убрать строку ${index + 1}`);
+        removeRow.addEventListener("click", () => {
+          const remainingRows = collectGradeReviewRows().filter((_, rowIndex) => rowIndex !== index);
+          renderGradeReview(
+            remainingRows.length ? remainingRows : [{ subject: "", grades: [], rawGrades: "" }],
+            pendingGradeIntent
+          );
+        });
+        item.append(subjectField, gradesField, removeRow);
+        gradeReview.append(item);
+      });
+
+      const addRow = document.createElement("button");
+      addRow.className = "secondary-button";
+      addRow.type = "button";
+      addRow.textContent = "Добавить предмет";
+      addRow.addEventListener("click", () => {
+        const editedRows = collectGradeReviewRows();
+        editedRows.push({ subject: "", grades: [], rawGrades: "" });
+        renderGradeReview(editedRows, pendingGradeIntent);
+      });
+
+      const confirm = document.createElement("button");
+      confirm.className = "grade-confirm-button";
+      confirm.type = "button";
+      confirm.textContent = "Проверил — посчитать";
+      confirm.addEventListener("click", () => {
+        const reviewedRows = collectGradeReviewRows();
+        const invalid = reviewedRows.find((row) =>
+          !row.subject || !row.rawGrades ||
+          row.tokens.some((token) => !/^[2-5]$/.test(token))
+        );
+        if (invalid) {
+          appendGradeMessage("assistant", "В каждой строке укажи предмет и оценки от 2 до 5, разделяя оценки пробелами.");
+          return;
+        }
+        currentGradeRows = reviewedRows.map(({ subject, grades }) => ({ subject, grades }));
+        gradeReview.hidden = true;
+        handleGradeIntent(pendingGradeIntent, currentGradeRows);
+      });
+      gradeReview.append(addRow, confirm);
+    }
+
+    function collectGradeReviewRows() {
+      return [...gradeReview.querySelectorAll(".grade-review-row")].map((item) => {
+        const subject = item.querySelector('[data-field="subject"]').value.trim();
+        const rawGrades = item.querySelector('[data-field="grades"]').value.trim();
+        const tokens = rawGrades.split(/\s+/).filter(Boolean);
+        return { subject, rawGrades, tokens, grades: tokens.map(Number) };
+      });
     }
 
     function loadTesseract() {
@@ -357,163 +692,105 @@
       return tesseractPromise;
     }
 
-    async function getCroppedImage() {
-      const sourceX = Math.round(cropArea.left * photoPreview.naturalWidth);
-      const sourceY = Math.round(cropArea.top * photoPreview.naturalHeight);
-      const sourceWidth = Math.round(cropArea.width * photoPreview.naturalWidth);
-      const sourceHeight = Math.round(cropArea.height * photoPreview.naturalHeight);
-      const scale = Math.min(2, 1400 / sourceWidth, 2600 / sourceHeight);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(sourceWidth * scale);
-      canvas.height = Math.round(sourceHeight * scale);
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("Не удалось подготовить выбранную область фото.");
-      context.drawImage(photoPreview, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-      return await new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => blob
-          ? resolve(blob)
-          : reject(new Error("Не удалось подготовить выбранную область фото.")), "image/jpeg", 0.95);
-      });
-    }
+    gradePhotoButton.addEventListener("click", () => gradePhoto.click());
 
-    cameraButton.addEventListener("click", () => {
-      ocrStatus.classList.remove("error");
-      ocrStatus.textContent = "Выбери фото или сделай снимок, затем обведи строку с оценками.";
-      photoInput.click();
-    });
-
-    photoInput.addEventListener("change", async () => {
-      const image = photoInput.files[0];
-      photoInput.value = "";
+    gradePhoto.addEventListener("change", () => {
+      const image = gradePhoto.files[0];
+      gradePhoto.value = "";
       if (!image) return;
-      try {
-        if (!image.type.startsWith("image/")) throw new Error("Выбери файл изображения.");
-        if (photoUrl) URL.revokeObjectURL(photoUrl);
-        photoUrl = URL.createObjectURL(image);
-        photoPreview.src = photoUrl;
-        await photoPreview.decode();
-        cropArea.left = 0.08;
-        cropArea.top = 0.25;
-        cropArea.width = 0.84;
-        cropArea.height = 0.5;
-        renderCropArea();
-        cropDialog.showModal();
-        ocrStatus.textContent = "";
-      } catch (error) {
-        if (photoUrl) URL.revokeObjectURL(photoUrl);
-        photoUrl = null;
-        photoPreview.removeAttribute("src");
-        ocrStatus.classList.add("error");
-        ocrStatus.textContent = error.message || "Не удалось открыть фото. Попробуй выбрать другое изображение.";
-      }
-    });
-
-    cropDialog.addEventListener("close", () => {
-      if (photoUrl) URL.revokeObjectURL(photoUrl);
-      photoUrl = null;
-      photoPreview.removeAttribute("src");
-    });
-
-    document.querySelector("#cancelCrop").addEventListener("click", () => cropDialog.close());
-
-    cropSelection.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      const handle = event.target.closest("[data-handle]")?.dataset.handle || "move";
-      const start = { ...cropArea, x: event.clientX, y: event.clientY };
-      const bounds = cropImageWrapper.getBoundingClientRect();
-      cropSelection.setPointerCapture(event.pointerId);
-
-      function moveSelection(moveEvent) {
-        const dx = (moveEvent.clientX - start.x) / bounds.width;
-        const dy = (moveEvent.clientY - start.y) / bounds.height;
-        const minWidth = 0.06;
-        const minHeight = 0.06;
-        let left = start.left;
-        let top = start.top;
-        let right = start.left + start.width;
-        let bottom = start.top + start.height;
-        if (handle === "move") {
-          left = clamp(start.left + dx, 0, 1 - start.width);
-          top = clamp(start.top + dy, 0, 1 - start.height);
-        } else {
-          if (handle.includes("w")) left = clamp(start.left + dx, 0, right - minWidth);
-          if (handle.includes("e")) right = clamp(start.left + start.width + dx, left + minWidth, 1);
-          if (handle.includes("n")) top = clamp(start.top + dy, 0, bottom - minHeight);
-          if (handle.includes("s")) bottom = clamp(start.top + start.height + dy, top + minHeight, 1);
-          cropArea.left = left;
-          cropArea.top = top;
-          cropArea.width = right - left;
-          cropArea.height = bottom - top;
-        }
-        if (handle === "move") {
-          cropArea.left = left;
-          cropArea.top = top;
-        }
-        renderCropArea();
-      }
-
-      function stopMoving() {
-        cropSelection.removeEventListener("pointermove", moveSelection);
-        cropSelection.removeEventListener("pointerup", stopMoving);
-        cropSelection.removeEventListener("pointercancel", stopMoving);
-      }
-
-      cropSelection.addEventListener("pointermove", moveSelection);
-      cropSelection.addEventListener("pointerup", stopMoving);
-      cropSelection.addEventListener("pointercancel", stopMoving);
-    });
-
-    recognizeCropButton.addEventListener("click", async () => {
-      recognizeCropButton.disabled = true;
-      try {
-        const croppedImage = await getCroppedImage();
-        cropDialog.close();
-        cameraButton.disabled = true;
-        ocrStatus.classList.remove("error");
-        ocrStatus.textContent = "Распознаю оценки в выбранной области…";
-        gradeResult.replaceChildren();
-        await loadTesseract();
-        const { data: { text } } = await window.Tesseract.recognize(croppedImage, "eng");
-        const grades = text.match(/\b[2-5]\b/g) || [];
-        if (grades.length === 0) throw new Error("В этой области не нашлись оценки от 2 до 5. Попробуй обвести строку точнее.");
-        gradeInput.value = grades.join(", ");
-        ocrStatus.textContent = `Распознано: ${grades.join(", ")}. Проверь оценки в поле и нажми «Посчитать».`;
-      } catch (error) {
-        ocrStatus.classList.add("error");
-        ocrStatus.textContent = error.message || "Не удалось распознать фото. Попробуй ещё раз.";
-      } finally {
-        recognizeCropButton.disabled = false;
-        cameraButton.disabled = false;
-      }
-    });
-
-    gradeForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const parts = gradeInput.value.trim().split(/[,\s;]+/).filter(Boolean);
-      const grades = parts.map(Number);
-      if (grades.length === 0 || grades.some((grade) => !Number.isInteger(grade) || grade < 2 || grade > 5)) {
-        gradeResult.innerHTML = '<p class="error">Введи оценки целыми числами от 2 до 5, например: 5, 4, 3.</p>';
+      if (!image.type.startsWith("image/")) {
+        setGradeStatus("Выбери файл изображения.", true);
         return;
       }
-      const sum = grades.reduce((total, grade) => total + grade, 0);
-      const average = sum / grades.length;
-      const quarterGrade = Math.round(average);
-      const formatNumber = (number) => number.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
-      const goalLines = [5, 4, 3, 2].map((goal) => {
-        const threshold = goal - 0.5;
-        if (average >= threshold) return `<li>Для оценки ${goal}: уже выходит ${goal} или выше.</li>`;
-        const needed = Math.ceil((threshold * grades.length - sum) / (goal - threshold) - 1e-10);
-        return `<li>Для оценки ${goal}: нужно получить ещё ${needed} оценок ${goal}.</li>`;
-      });
-      gradeResult.innerHTML = `
-        <h2>Результат</h2>
-        <p>Средний балл: <strong>${formatNumber(average)}</strong></p>
-        <p>Примерная четвертная оценка: <strong>${quarterGrade}</strong></p>
-        <h3>Сколько оценок нужно получить</h3>
-        <ul>${goalLines.join("")}</ul>
-      `;
+      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl);
+      pendingPhoto = image;
+      pendingPhotoUrl = URL.createObjectURL(image);
+      gradeAttachmentThumbnail.src = pendingPhotoUrl;
+      gradeAttachmentName.textContent = image.name || "Фото оценок";
+      gradeAttachment.hidden = false;
+      setGradeStatus("Фото прикреплено. Напиши предмет или «посчитай всё» и отправь сообщение.");
     });
 
+    document.querySelector("#removeGradeAttachment").addEventListener("click", () => {
+      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl);
+      pendingPhoto = null;
+      pendingPhotoUrl = null;
+      gradeAttachmentThumbnail.removeAttribute("src");
+      gradeAttachment.hidden = true;
+      setGradeStatus("");
+    });
+
+    async function recognizeGradePhoto(image, intent) {
+      gradeSendButton.disabled = true;
+      gradePhotoButton.disabled = true;
+      gradeResult.replaceChildren();
+      gradeReview.replaceChildren();
+      gradeReview.hidden = true;
+      currentGradeRows = [];
+      setGradeStatus("Читаю фото. Это может занять несколько секунд.");
+      appendGradeMessage("assistant", "Распознаю предметы и оценки на фото…");
+      try {
+        await loadTesseract();
+        const { data } = await window.Tesseract.recognize(image, "rus+eng");
+        const rows = parseOcrRows(data);
+        if (!rows.length) {
+          appendGradeMessage("assistant", "Не удалось найти оценки на фото. Попробуй более чёткий снимок или напиши оценки вручную через пробел.");
+          setGradeStatus("Оценки не найдены.", true);
+          return;
+        }
+        appendGradeMessage("assistant", `Нашёл ${rows.length} ${gradeRowsWord(rows.length)} с оценками. Проверь и исправь предметы и оценки ниже.`);
+        renderGradeReview(rows, intent);
+        setGradeStatus("Фото распознано. Проверь данные и нажми «Проверил — посчитать».");
+      } catch (error) {
+        const message = error && error.message
+          ? error.message
+          : "Не удалось распознать фото. Попробуй другое изображение или введи оценки вручную.";
+        appendGradeMessage("assistant", message);
+        setGradeStatus(message, true);
+      } finally {
+        gradeSendButton.disabled = false;
+        gradePhotoButton.disabled = false;
+      }
+    }
+
+    gradeChatForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = gradeMessage.value.trim();
+      const image = pendingPhoto;
+      const imageUrl = pendingPhotoUrl;
+      if (!text && !image) return;
+
+      const displayedText = text || pendingGradeIntent || "Посчитай все оценки";
+      appendGradeMessage("user", displayedText, imageUrl);
+      gradeMessage.value = "";
+      gradeMessage.focus();
+      gradeResult.replaceChildren();
+      setGradeStatus("");
+
+      if (image) {
+        pendingPhoto = null;
+        pendingPhotoUrl = null;
+        gradeAttachmentThumbnail.removeAttribute("src");
+        gradeAttachment.hidden = true;
+        await recognizeGradePhoto(image, displayedText);
+        return;
+      }
+
+      const manualRows = parseManualRows(text);
+      if (manualRows.length) {
+        appendGradeMessage("assistant", "Я понял оценки. Проверь предмет и числа перед расчётом.");
+        renderGradeReview(manualRows, text);
+        return;
+      }
+
+      if (currentGradeRows.length) {
+        handleGradeIntent(text);
+        return;
+      }
+
+      pendingGradeIntent = text;
+      appendGradeMessage("assistant", "Прикрепи фото дневника или напиши оценки и предмет, например: «Русский: 5 4 3». Все оценки вводи через пробел.");
+    });
     const configNotice = document.querySelector("#configNotice");
     const authForm = document.querySelector("#authForm");
     const authSubmit = document.querySelector("#authSubmit");
