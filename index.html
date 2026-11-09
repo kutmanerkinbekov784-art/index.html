@@ -633,7 +633,12 @@
       };
       try {
         const result = isSignUp
-          ? await supabaseClient.auth.signUp(credentials)
+          ? await supabaseClient.auth.signUp({
+            ...credentials,
+            options: {
+              emailRedirectTo: new URL(window.location.pathname, window.location.origin).toString()
+            }
+          })
           : await supabaseClient.auth.signInWithPassword(credentials);
         if (result.error) throw result.error;
         if (isSignUp && result.data.user && !result.data.session) {

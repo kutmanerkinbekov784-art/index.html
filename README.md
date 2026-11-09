@@ -11,7 +11,7 @@
 1. Второй проект создавать не нужно. Открой свой проект в [Supabase](https://supabase.com/).
 2. Найди **Project URL** в **Project Settings → API** и публичный **Publishable key** в **Project Settings → API Keys** (или используй legacy **anon key** в **Project Settings → API**). Это два публичных значения для браузера. **Не используй** ключи `service_role` и `secret`.
 3. Открой `config.js` в этом репозитории: вставь Project URL вместо `https://YOUR_PROJECT_ID.supabase.co`, а Publishable/anon key — вместо `YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY`. Эти значения будут доступны посетителям опубликованного сайта — это нормально для публичного ключа. Не вставляй сюда ключ Gemini или другие секреты.
-4. В Supabase открой **Authentication → URL Configuration** и задай адрес GitHub Pages сайта как **Site URL**, а также добавь его в **Redirect URLs**. Обычно адрес выглядит как `https://ИМЯ_ПОЛЬЗОВАТЕЛЯ.github.io/ИМЯ_РЕПОЗИТОРИЯ/`. Включи вход по Email. Если включено подтверждение почты, пользователь должен подтвердить адрес до входа.
+4. В Supabase открой **Authentication → URL Configuration**. Для этого сайта укажи **Site URL** `https://kutmanerkinbekov784-art.github.io/index.html/` и добавь этот же точный адрес в **Redirect URLs**. Подтверждение почты возвращает пользователя на текущий путь сайта; переходы разрешаются настройкой allowlist Supabase. Включи вход по Email. Если включено подтверждение почты, пользователь должен подтвердить адрес до входа.
 
 ### 2. Подключи Gemini на сервере Supabase
 
