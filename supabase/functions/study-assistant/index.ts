@@ -101,7 +101,16 @@ async function askGemini(apiKey: string, systemInstruction: string, prompt: stri
     },
   );
   if (!response.ok) {
-    console.error("Gemini request failed:", response.status);
+    const errorBody = await response.json().catch(() => null);
+    const upstreamMessage = errorBody?.error?.message;
+    const safeMessage = typeof upstreamMessage === "string"
+      ? upstreamMessage
+        .replaceAll(apiKey, "[REDACTED]")
+        .replace(/\bBearer\s+\S+/gi, "Bearer [REDACTED]")
+        .replace(/[\r\n]/g, " ")
+        .slice(0, 1000)
+      : "No error message in Gemini response";
+    console.error("Gemini request failed:", { status: response.status, message: safeMessage });
     throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
   }
   const result = await response.json();
