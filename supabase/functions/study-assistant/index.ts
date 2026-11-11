@@ -90,7 +90,7 @@ async function askGemini(apiKey: string, systemInstruction: string, prompt: stri
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemInstruction }] },
+        systemInstruction: { parts: [{ text: systemInstruction }] },
         contents,
         generationConfig: {
           temperature: 0.4,
