@@ -231,15 +231,16 @@
   <main>
     <section id="gradesPage" class="page" hidden>
       <h1>Четвертные оценки</h1>
-      <p class="description">Напиши, какой предмет посчитать, или попроси посчитать всё. Можно прикрепить фото дневника.</p>
+      <p class="description">Укажи предмет в поле над сообщением, напиши оценки через пробел или попроси посчитать всё. Можно прикрепить фото дневника.</p>
       <div id="gradeChatLog" class="grade-chat-log" role="log" aria-live="polite" aria-label="Чат по оценкам">
         <div class="grade-message assistant">
-          <p>Привет! Пришли чёткое фото дневника или напиши оценки через пробел: <strong>5 4 3</strong>.
-            Примеры: «Посчитай русский» или «Посчитай все оценки». На фото предмет и его оценки лучше расположить в одной строке.</p>
+          <p>Привет! Напиши оценки через пробел или прикрепи фото из галереи/камеры. Название предмета укажи в поле над строкой сообщения. Чтобы посчитать дневник целиком, напиши «Посчитай всё».</p>
         </div>
       </div>
       <section id="gradeReview" class="grade-review" aria-label="Проверка распознанных предметов и оценок" hidden></section>
       <form id="gradeChatForm" class="grade-composer">
+        <label for="gradeSubject">Предмет <span class="hint">(необязательно)</span></label>
+        <input id="gradeSubject" type="text" maxlength="80" placeholder="Например, русский язык">
         <div id="gradeAttachment" class="grade-attachment" hidden>
           <img id="gradeAttachmentThumbnail" alt="Выбранное фото">
           <span id="gradeAttachmentName" class="grade-attachment-name"></span>
@@ -250,7 +251,7 @@
           <button id="gradePhotoButton" class="grade-icon-button" type="button" aria-label="Прикрепить фото из галереи или камеры" title="Фото из галереи или камеры">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>
           </button>
-          <textarea id="gradeMessage" rows="1" maxlength="1000" placeholder="Например: посчитай всё" aria-label="Сообщение помощнику по оценкам"></textarea>
+          <textarea id="gradeMessage" rows="1" maxlength="1000" placeholder="Напиши оценки через пробел или команду" aria-label="Сообщение помощнику по оценкам"></textarea>
           <button id="gradeSendButton" class="grade-send-button" type="submit">Отправить</button>
         </div>
       </form>
@@ -326,6 +327,7 @@
 
     const gradeChatLog = document.querySelector("#gradeChatLog");
     const gradeChatForm = document.querySelector("#gradeChatForm");
+    const gradeSubjectInput = document.querySelector("#gradeSubject");
     const gradeMessage = document.querySelector("#gradeMessage");
     const gradePhoto = document.querySelector("#gradePhoto");
     const gradePhotoButton = document.querySelector("#gradePhotoButton");
@@ -377,7 +379,7 @@
     }
 
     function addOrMergeRow(rows, subject, grades) {
-      const name = subject || "Предмет (укажи название)";
+      const name = subject || "Предмет не распознан";
       const key = name.toLocaleLowerCase("ru").replace(/[^\p{L}]/gu, "");
       const existing = rows.find((row) =>
         row.subject.toLocaleLowerCase("ru").replace(/[^\p{L}]/gu, "") === key
@@ -414,7 +416,7 @@
       return rows;
     }
 
-    function parseManualRows(text) {
+    function parseManualRows(text, subjectOverride = "") {
       const rawGrades = text.replace(/[^\d.,\s]/gu, " ").trim().replace(/\s+/g, " ");
       const gradeTokens = rawGrades.split(/\s+/).filter(Boolean);
       if (!gradeTokens.length) return [];
@@ -433,7 +435,7 @@
           " "
         );
       }
-      const subject = cleanSubject(subjectText) || "Предмет (укажи название)";
+      const subject = subjectOverride.trim() || cleanSubject(subjectText) || "Предмет не распознан";
       return [{ subject, grades: gradeTokens.map(Number), rawGrades }];
     }
 
@@ -552,16 +554,11 @@
       }
 
       if (!rows.length) {
-        appendGradeMessage("assistant", "Сначала пришли фото оценок или напиши их через пробел, например: «Русский: 5 4 3».");
+        appendGradeMessage("assistant", "Сначала пришли фото оценок или напиши числа через пробел. Предмет можно указать в отдельном поле над сообщением.");
         return;
       }
 
       const matchingRows = findSubjectRows(message, rows);
-      if (matchingRows.length) {
-        calculateRows(matchingRows);
-        return;
-      }
-
       const words = new Set(normalizeWords(message));
       const wantsAll = ["все", "всё", "всех", "всем", "предметы", "предметам", "каждый", "каждую"]
         .some((word) => words.has(word));
@@ -570,12 +567,17 @@
         return;
       }
 
+      if (matchingRows.length) {
+        calculateRows(matchingRows);
+        return;
+      }
+
       if (rows.length === 1) {
         calculateRows(rows);
         return;
       }
 
-      appendGradeMessage("assistant", "Я не понял, какой предмет нужен. Напиши, например, «Посчитай русский» или «Посчитай все оценки».");
+      appendGradeMessage("assistant", "Я не понял, какой предмет нужен. Выбери его в поле «Предмет» или напиши «Посчитай всё».");
     }
 
     function renderGradeReview(rows, intent) {
@@ -720,7 +722,7 @@
       setGradeStatus("");
     });
 
-    async function recognizeGradePhoto(image, intent) {
+    async function recognizeGradePhoto(image, intent, subjectOverride) {
       gradeSendButton.disabled = true;
       gradePhotoButton.disabled = true;
       gradeResult.replaceChildren();
@@ -737,6 +739,9 @@
           appendGradeMessage("assistant", "Не удалось найти оценки на фото. Попробуй более чёткий снимок или напиши оценки вручную через пробел.");
           setGradeStatus("Оценки не найдены.", true);
           return;
+        }
+        if (subjectOverride && rows.length === 1) {
+          rows[0].subject = subjectOverride;
         }
         appendGradeMessage("assistant", `Нашёл ${rows.length} ${gradeRowsWord(rows.length)} с оценками. Проверь и исправь предметы и оценки ниже.`);
         renderGradeReview(rows, intent);
@@ -756,11 +761,15 @@
     gradeChatForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const text = gradeMessage.value.trim();
+      const subject = gradeSubjectInput.value.trim();
       const image = pendingPhoto;
       const imageUrl = pendingPhotoUrl;
-      if (!text && !image) return;
+      if (!text && !image && !subject) return;
 
-      const displayedText = text || pendingGradeIntent || "Посчитай все оценки";
+      const intent = text || pendingGradeIntent || (subject ? `Посчитай ${subject}` : "Посчитай все оценки");
+      const displayedText = subject
+        ? `Предмет: ${subject}${text ? `\n${text}` : ""}`
+        : text || pendingGradeIntent || "Посчитай все оценки";
       appendGradeMessage("user", displayedText, imageUrl);
       gradeMessage.value = "";
       gradeMessage.focus();
@@ -772,11 +781,11 @@
         pendingPhotoUrl = null;
         gradeAttachmentThumbnail.removeAttribute("src");
         gradeAttachment.hidden = true;
-        await recognizeGradePhoto(image, displayedText);
+        await recognizeGradePhoto(image, intent, subject);
         return;
       }
 
-      const manualRows = parseManualRows(text);
+      const manualRows = parseManualRows(text, subject);
       if (manualRows.length) {
         appendGradeMessage("assistant", "Я понял оценки. Проверь предмет и числа перед расчётом.");
         renderGradeReview(manualRows, text);
@@ -784,12 +793,12 @@
       }
 
       if (currentGradeRows.length) {
-        handleGradeIntent(text);
+        handleGradeIntent(subject ? `${text} ${subject}` : text);
         return;
       }
 
-      pendingGradeIntent = text;
-      appendGradeMessage("assistant", "Прикрепи фото дневника или напиши оценки и предмет, например: «Русский: 5 4 3». Все оценки вводи через пробел.");
+      pendingGradeIntent = intent;
+      appendGradeMessage("assistant", "Прикрепи фото дневника или напиши оценки через пробел. Предмет можно указать в поле над строкой сообщения.");
     });
     const configNotice = document.querySelector("#configNotice");
     const authForm = document.querySelector("#authForm");
