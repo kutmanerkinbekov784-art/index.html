@@ -274,13 +274,13 @@
     <section id="collegePage" class="page" hidden>
       <h1>Оценки в колледже</h1>
       <p class="description">Посчитай баллы за семестр и экзамен по правилам своего предмета.</p>
-      <p class="hint">Введи набранные и максимально возможные баллы. Итог будет пересчитан в проценты из 100. Пороги для оценок зависят от колледжа и предмета: возьми их из силлабуса или уточни у преподавателя.</p>
+      <p class="hint">Не нужно складывать баллы самому: перечисли полученные баллы через пробел, и сайт сложит их. Если в журнале уже есть итоговая сумма, просто введи одно число. Итог будет пересчитан в проценты из 100. Пороги оценок возьми из силлабуса своего предмета.</p>
 
       <form id="collegeForm" class="college-form">
         <div class="college-field-grid">
           <div class="college-field">
             <label for="collegeSemesterEarned">Баллы за семестр</label>
-            <input id="collegeSemesterEarned" type="number" min="0" step="any" required placeholder="Например, 45">
+            <input id="collegeSemesterEarned" type="text" inputmode="decimal" required placeholder="Например, 8 7 10 9" aria-describedby="collegePointsHelp">
           </div>
           <div class="college-field">
             <label for="collegeSemesterMax">Максимум за семестр <span class="hint">(пример: 60)</span></label>
@@ -288,13 +288,15 @@
           </div>
           <div class="college-field">
             <label for="collegeExamEarned">Уже набрано за экзамен</label>
-            <input id="collegeExamEarned" type="number" min="0" step="any" value="0" required>
+            <input id="collegeExamEarned" type="text" inputmode="decimal" placeholder="Например, 18 20">
           </div>
           <div class="college-field">
             <label for="collegeExamMax">Максимум за экзамен <span class="hint">(пример: 40)</span></label>
             <input id="collegeExamMax" type="number" min="0" step="any" value="40" required>
           </div>
         </div>
+        <p id="collegePointsHelp" class="hint">Перечисли все баллы за семестр через пробел. Например, «8 7 10 9» сайт сам сложит. Баллы за экзамен можно тоже перечислить через пробел; пустое поле означает 0.</p>
+        <p id="collegePointsPreview" class="hint" role="status" aria-live="polite"></p>
         <p class="hint">Значения 60 и 40 — только пример распределения баллов. Если у тебя другое, замени максимумы по силлабусу.</p>
 
         <h2 class="college-section">Пороги оценок по твоему колледжу</h2>
@@ -386,6 +388,7 @@
 
     const collegeForm = document.querySelector("#collegeForm");
     const collegeResult = document.querySelector("#collegeResult");
+    const collegePointsPreview = document.querySelector("#collegePointsPreview");
     const collegeFields = {
       semesterEarned: document.querySelector("#collegeSemesterEarned"),
       semesterMax: document.querySelector("#collegeSemesterMax"),
@@ -396,13 +399,73 @@
       threshold5: document.querySelector("#collegeThreshold5")
     };
 
+    function parsePointList(value, allowEmpty = false) {
+      const trimmed = value.trim();
+      if (!trimmed) return allowEmpty ? { total: 0, valid: true } : { total: 0, valid: false };
+
+      const tokens = trimmed.split(/[\s,;+]+/).filter(Boolean);
+      if (tokens.some((token) => !/^\d+(?:\.\d+)?$/.test(token))) {
+        return { total: 0, valid: false };
+      }
+
+      const points = tokens.map(Number);
+      if (points.some((point) => !Number.isFinite(point))) {
+        return { total: 0, valid: false };
+      }
+
+      return {
+        total: points.reduce((sum, point) => sum + point, 0),
+        valid: true
+      };
+    }
+
+    function formatCollegePoints(number) {
+      return number.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+    }
+
+    function collegePointWord(count) {
+      const lastTwoDigits = count % 100;
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return "баллов";
+      if (count % 10 === 1) return "балл";
+      if (count % 10 >= 2 && count % 10 <= 4) return "балла";
+      return "баллов";
+    }
+
+    function updateCollegePointsPreview() {
+      const semester = parsePointList(collegeFields.semesterEarned.value);
+      const exam = parsePointList(collegeFields.examEarned.value, true);
+      collegePointsPreview.classList.toggle("error", !semester.valid || !exam.valid);
+
+      if (!semester.valid || !exam.valid) {
+        collegePointsPreview.textContent = "Проверь список: вводи баллы числами через пробел.";
+        return;
+      }
+
+      collegePointsPreview.textContent =
+        `Сумма за семестр: ${formatCollegePoints(semester.total)}. Сумма за экзамен: ${formatCollegePoints(exam.total)}.`;
+    }
+
+    collegeFields.semesterEarned.addEventListener("input", updateCollegePointsPreview);
+    collegeFields.examEarned.addEventListener("input", updateCollegePointsPreview);
+
     collegeForm.addEventListener("submit", (event) => {
       event.preventDefault();
       collegeResult.replaceChildren();
+      updateCollegePointsPreview();
 
-      const semesterEarned = Number(collegeFields.semesterEarned.value);
+      const semesterPoints = parsePointList(collegeFields.semesterEarned.value);
+      const examPoints = parsePointList(collegeFields.examEarned.value, true);
+      if (!semesterPoints.valid || !examPoints.valid) {
+        const error = document.createElement("p");
+        error.className = "error";
+        error.textContent = "Введи баллы числами через пробел, например: 8 7 10 9.";
+        collegeResult.append(error);
+        return;
+      }
+
+      const semesterEarned = semesterPoints.total;
       const semesterMax = Number(collegeFields.semesterMax.value);
-      const examEarned = Number(collegeFields.examEarned.value);
+      const examEarned = examPoints.total;
       const examMax = Number(collegeFields.examMax.value);
       const thresholds = [
         { grade: 3, value: collegeFields.threshold3.value },
@@ -502,7 +565,7 @@
             target.textContent = `Оценка ${grade} недостижима с оставшимися баллами экзамена.`;
           } else {
             const remainingExamPoints = examPointsRequired - examEarned;
-            target.textContent = `Для оценки ${grade} нужно набрать на экзамене минимум ${examPointsRequired} из ${formatPoints(examMax)} баллов (ещё ${formatPoints(remainingExamPoints)} баллов).`;
+            target.textContent = `Для оценки ${grade} нужно набрать на экзамене минимум ${examPointsRequired} из ${formatPoints(examMax)} баллов (ещё ${formatPoints(remainingExamPoints)} ${collegePointWord(remainingExamPoints)}).`;
           }
           collegeResult.append(target);
         }
