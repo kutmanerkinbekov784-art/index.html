@@ -199,6 +199,15 @@
     .grade-result-card { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e0e8f4; }
     .grade-result-card p { margin: 4px 0; }
     #gradeResult { margin-top: 24px; line-height: 1.6; }
+    .college-form { display: grid; gap: 12px; }
+    .college-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .college-field { min-width: 0; }
+    .college-field label { margin: 0 0 6px; }
+    .college-field input { width: 100%; }
+    .college-section { margin: 24px 0 12px; }
+    .college-result { margin-top: 22px; line-height: 1.6; }
+    .college-result h2 { margin-bottom: 8px; }
+    .college-result p { margin: 6px 0; }
 
     @media (max-width: 480px) {
       .grade-chat-log { min-height: 200px; max-height: 52vh; padding: 10px; }
@@ -206,6 +215,7 @@
       .grade-review-row .secondary-button { justify-self: start; }
       .grade-send-button { width: 50px !important; padding: 0 !important; font-size: 0; }
       .grade-send-button::before { content: "➤"; font-size: 20px; }
+      .college-field-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 620px) {
@@ -224,6 +234,7 @@
     <button id="menuToggle" class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="siteNav">☰</button>
     <nav id="siteNav" class="site-nav" aria-label="Разделы сайта">
       <button class="nav-button" type="button" data-page="gradesPage" aria-current="false">Четвертные оценки</button>
+      <button class="nav-button" type="button" data-page="collegePage" aria-current="false">Оценки в колледже</button>
       <button class="nav-button" type="button" data-page="studyPage" aria-current="page">Помощник по учёбе</button>
     </nav>
   </header>
@@ -258,6 +269,54 @@
       <p id="gradeStatus" class="hint" role="status" aria-live="polite"></p>
       <section id="gradeResult" aria-live="polite"></section>
       <p class="hint">Фото обрабатывается в этом браузере и не отправляется ИИ-сервису. Перед подсчётом проверь распознанные оценки. Для повышения предполагается, что следующие оценки будут целевого балла.</p>
+    </section>
+
+    <section id="collegePage" class="page" hidden>
+      <h1>Оценки в колледже</h1>
+      <p class="description">Посчитай баллы за семестр и экзамен по правилам своего предмета.</p>
+      <p class="hint">Введи набранные и максимально возможные баллы. Итог будет пересчитан в проценты из 100. Пороги для оценок зависят от колледжа и предмета: возьми их из силлабуса или уточни у преподавателя.</p>
+
+      <form id="collegeForm" class="college-form">
+        <div class="college-field-grid">
+          <div class="college-field">
+            <label for="collegeSemesterEarned">Баллы за семестр</label>
+            <input id="collegeSemesterEarned" type="number" min="0" step="any" required placeholder="Например, 45">
+          </div>
+          <div class="college-field">
+            <label for="collegeSemesterMax">Максимум за семестр <span class="hint">(пример: 60)</span></label>
+            <input id="collegeSemesterMax" type="number" min="0.01" step="any" value="60" required>
+          </div>
+          <div class="college-field">
+            <label for="collegeExamEarned">Уже набрано за экзамен</label>
+            <input id="collegeExamEarned" type="number" min="0" step="any" value="0" required>
+          </div>
+          <div class="college-field">
+            <label for="collegeExamMax">Максимум за экзамен <span class="hint">(пример: 40)</span></label>
+            <input id="collegeExamMax" type="number" min="0" step="any" value="40" required>
+          </div>
+        </div>
+        <p class="hint">Значения 60 и 40 — только пример распределения баллов. Если у тебя другое, замени максимумы по силлабусу.</p>
+
+        <h2 class="college-section">Пороги оценок по твоему колледжу</h2>
+        <p class="hint">Заполни минимальный итоговый балл для каждой отметки. Например, если по силлабусу для «3» нужно не меньше 56 баллов, введи 56. Это только пример — не общая шкала для всех колледжей.</p>
+        <div class="college-field-grid">
+          <div class="college-field">
+            <label for="collegeThreshold3">Минимум для оценки 3</label>
+            <input id="collegeThreshold3" type="number" min="0" max="100" step="any" placeholder="Например, 56">
+          </div>
+          <div class="college-field">
+            <label for="collegeThreshold4">Минимум для оценки 4</label>
+            <input id="collegeThreshold4" type="number" min="0" max="100" step="any" placeholder="Например, 71">
+          </div>
+          <div class="college-field">
+            <label for="collegeThreshold5">Минимум для оценки 5</label>
+            <input id="collegeThreshold5" type="number" min="0" max="100" step="any" placeholder="Например, 86">
+          </div>
+        </div>
+
+        <button type="submit">Посчитать баллы</button>
+      </form>
+      <section id="collegeResult" class="college-result" aria-live="polite"></section>
     </section>
 
     <section id="studyPage" class="page">
@@ -323,6 +382,131 @@
     menuToggle.addEventListener("click", () => {
       const isOpen = siteNav.classList.toggle("open");
       menuToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    const collegeForm = document.querySelector("#collegeForm");
+    const collegeResult = document.querySelector("#collegeResult");
+    const collegeFields = {
+      semesterEarned: document.querySelector("#collegeSemesterEarned"),
+      semesterMax: document.querySelector("#collegeSemesterMax"),
+      examEarned: document.querySelector("#collegeExamEarned"),
+      examMax: document.querySelector("#collegeExamMax"),
+      threshold3: document.querySelector("#collegeThreshold3"),
+      threshold4: document.querySelector("#collegeThreshold4"),
+      threshold5: document.querySelector("#collegeThreshold5")
+    };
+
+    collegeForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      collegeResult.replaceChildren();
+
+      const semesterEarned = Number(collegeFields.semesterEarned.value);
+      const semesterMax = Number(collegeFields.semesterMax.value);
+      const examEarned = Number(collegeFields.examEarned.value);
+      const examMax = Number(collegeFields.examMax.value);
+      const thresholds = [
+        { grade: 3, value: collegeFields.threshold3.value },
+        { grade: 4, value: collegeFields.threshold4.value },
+        { grade: 5, value: collegeFields.threshold5.value }
+      ].map(({ grade, value }) => ({
+        grade,
+        value: value === "" ? null : Number(value)
+      }));
+
+      const errorMessage = (message) => {
+        const error = document.createElement("p");
+        error.className = "error";
+        error.textContent = message;
+        collegeResult.append(error);
+      };
+
+      if (
+        !Number.isFinite(semesterEarned) ||
+        !Number.isFinite(semesterMax) ||
+        !Number.isFinite(examEarned) ||
+        !Number.isFinite(examMax) ||
+        semesterEarned < 0 ||
+        semesterMax <= 0 ||
+        examEarned < 0 ||
+        examMax < 0 ||
+        semesterEarned > semesterMax ||
+        examEarned > examMax
+      ) {
+        errorMessage("Проверь баллы: набранное число не может быть больше максимума, а максимум за семестр должен быть больше нуля.");
+        return;
+      }
+
+      if (thresholds.some(({ value }) =>
+        value !== null && (!Number.isFinite(value) || value < 0 || value > 100)
+      )) {
+        errorMessage("Пороги оценок должны быть числами от 0 до 100.");
+        return;
+      }
+
+      const enteredThresholds = thresholds.filter(({ value }) => value !== null);
+      if (enteredThresholds.some((threshold, index) =>
+        index > 0 && threshold.value <= enteredThresholds[index - 1].value
+      )) {
+        errorMessage("Пороги должны возрастать: для оценки 4 баллов нужно больше, чем для 3, а для 5 — больше, чем для 4.");
+        return;
+      }
+
+      const totalMax = semesterMax + examMax;
+      const pointsEarned = semesterEarned + examEarned;
+      const totalScore = pointsEarned / totalMax * 100;
+      const formatPoints = (number) => number.toLocaleString("ru-RU", {
+        maximumFractionDigits: 2
+      });
+
+      const heading = document.createElement("h2");
+      heading.textContent = "Результат";
+      const total = document.createElement("p");
+      const totalLabel = document.createElement("span");
+      totalLabel.textContent = "Итоговый результат: ";
+      const totalValue = document.createElement("strong");
+      totalValue.textContent = `${formatPoints(totalScore)} из 100 баллов`;
+      total.append(totalLabel, totalValue, document.createTextNode("."));
+      const detail = document.createElement("p");
+      detail.textContent = `Набрано ${formatPoints(pointsEarned)} из ${formatPoints(totalMax)} возможных баллов.`;
+      collegeResult.append(heading, total, detail);
+
+      if (enteredThresholds.length === 3) {
+        const currentGrade = enteredThresholds.reduce(
+          (grade, threshold) => totalScore >= threshold.value ? threshold.grade : grade,
+          2
+        );
+        const estimate = document.createElement("p");
+        estimate.textContent = `Примерная оценка по введённым порогам: ${currentGrade}.`;
+        collegeResult.append(estimate);
+      } else {
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = "Чтобы определить отметку и баллы до неё, добавь пороги из силлабуса. Без них показан только результат из 100 баллов.";
+        collegeResult.append(note);
+      }
+
+      if (examMax > 0 && enteredThresholds.length > 0) {
+        const targetsHeading = document.createElement("h3");
+        targetsHeading.textContent = "Сколько нужно набрать на экзамене";
+        collegeResult.append(targetsHeading);
+
+        for (const { grade, value } of enteredThresholds) {
+          const target = document.createElement("p");
+          const examPointsRequired = Math.max(
+            0,
+            Math.ceil((value * totalMax / 100) - semesterEarned - 1e-10)
+          );
+          if (examPointsRequired <= examEarned) {
+            target.textContent = `Минимум для оценки ${grade} уже набран.`;
+          } else if (examPointsRequired > examMax) {
+            target.textContent = `Оценка ${grade} недостижима с оставшимися баллами экзамена.`;
+          } else {
+            const remainingExamPoints = examPointsRequired - examEarned;
+            target.textContent = `Для оценки ${grade} нужно набрать на экзамене минимум ${examPointsRequired} из ${formatPoints(examMax)} баллов (ещё ${formatPoints(remainingExamPoints)} баллов).`;
+          }
+          collegeResult.append(target);
+        }
+      }
     });
 
     const gradeChatLog = document.querySelector("#gradeChatLog");
