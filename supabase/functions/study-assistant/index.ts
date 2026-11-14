@@ -13,11 +13,62 @@ type QuizPayload = {
   expiresAt: number;
 };
 
+class GeminiResponseError extends Error {}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function sanitizeGeminiMessage(message: string, apiKey: string): string {
+  return message
+    .replaceAll(apiKey, "[скрыто]")
+    .replace(/api[_ -]?key[ \t]*[:=][ \t]*[^, \t]+/gi, "API key=[скрыто]")
+    .replace(/sk[-_][A-Za-z0-9_-]{16,}/g, "[скрыто]")
+    .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, "[скрыто]")
+    .replace(/\bBearer\s+\S+/gi, "Bearer [скрыто]")
+    .replace(/[\r\n]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
   });
+}
+
+function geminiErrorMessage(httpStatus: number, body: unknown, apiKey: string): string | null {
+  if (!isRecord(body) || !isRecord(body.error)) return null;
+  const error = body.error;
+  const status = typeof error.status === "string" && /^[A-Z][A-Z0-9_]{0,39}$/.test(error.status)
+    ? error.status
+    : "";
+  const code = typeof error.code === "number" && Number.isInteger(error.code) && error.code >= 100 &&
+      error.code <= 599
+    ? error.code
+    : null;
+  const rawMessage = typeof error.message === "string" ? error.message.slice(0, 2000) : "";
+  if (!status && code === null && !rawMessage) return null;
+  const message = rawMessage
+    .replaceAll(apiKey, "[скрыто]")
+    .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, "[скрыто]")
+    .replace(/\bBearer\s+\S+/gi, "Bearer [скрыто]")
+    .replace(/[\r\n]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const sanitizedMessage = sanitizeGeminiMessage(message, apiKey);
+  const diagnostic = sanitizedMessage || "Gemini не вернул описание ошибки.";
+  const prefix = `Ошибка Gemini (${code === null ? `HTTP ${httpStatus}` : `код ${code}`}${status ? `, ${status}` : ""}): `;
+  const keyAdvice = code === 401 || status === "UNAUTHENTICATED" || /api.?key.{0,30}(invalid|not valid)/i.test(sanitizedMessage)
+    ? " Проверьте GEMINI_API_KEY в Supabase."
+    : code === 403 || status === "PERMISSION_DENIED"
+    ? " Проверьте доступ и ограничения ключа."
+    : code === 429 || status === "RESOURCE_EXHAUSTED"
+    ? " Проверьте квоту Gemini API."
+    : "";
+  const availableMessageLength = Math.max(0, 200 - prefix.length - keyAdvice.length);
+  return `${prefix}${diagnostic.slice(0, availableMessageLength)}${keyAdvice}`.slice(0, 200);
 }
 
 function requireText(value: unknown, name: string, maximum = 4000): string {
@@ -84,34 +135,46 @@ async function askGemini(apiKey: string, systemInstruction: string, prompt: stri
     ...history.map(({ role, text }) => ({ role, parts: [{ text }] })),
     { role: "user", parts: [{ text: prompt }] },
   ];
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents,
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 1200,
-          ...(json ? { responseMimeType: "application/json" } : {}),
-        },
-      }),
-    },
-  );
+  let response: Response;
+  try {
+    response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          contents,
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 1200,
+            ...(json ? { responseMimeType: "application/json" } : {}),
+          },
+        }),
+      },
+    );
+  } catch {
+    throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
+  }
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
     const upstreamMessage = errorBody?.error?.message;
     const safeMessage = typeof upstreamMessage === "string"
       ? upstreamMessage
         .replaceAll(apiKey, "[REDACTED]")
+        .replace(/api[_ -]?key[ \t]*[:=][ \t]*[^, \t]+/gi, "API key=[REDACTED]")
+        .replace(/sk[-_][A-Za-z0-9_-]{16,}/g, "[REDACTED]")
+        .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, "[REDACTED]")
         .replace(/\bBearer\s+\S+/gi, "Bearer [REDACTED]")
         .replace(/[\r\n]/g, " ")
         .slice(0, 1000)
       : "No error message in Gemini response";
     console.error("Gemini request failed:", { status: response.status, message: safeMessage });
-    throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
+    const diagnostic = geminiErrorMessage(response.status, errorBody, apiKey);
+    if (!diagnostic) {
+      throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
+    }
+    throw new GeminiResponseError(diagnostic);
   }
   const result = await response.json();
   const text = result?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text || "").join("").trim();
@@ -193,7 +256,11 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ error: "Неизвестный режим помощника." }, 400);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Не удалось обработать запрос.";
+    const message = error instanceof GeminiResponseError
+      ? error.message
+      : error instanceof Error
+      ? error.message
+      : "Не удалось обработать запрос.";
     console.error("Study assistant request failed:", message);
     return jsonResponse({ error: message }, 400);
   }
