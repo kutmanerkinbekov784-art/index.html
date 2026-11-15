@@ -5,6 +5,7 @@ const corsHeaders = {
 };
 
 type HistoryMessage = { role: "user" | "model"; text: string };
+type TutorImage = { mimeType: "image/jpeg" | "image/png" | "image/webp"; data: string };
 type QuizPayload = {
   question: string;
   options: string[];
@@ -15,8 +16,53 @@ type QuizPayload = {
 
 class GeminiResponseError extends Error {}
 
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isAllowedImageType(value: string): value is TutorImage["mimeType"] {
+  return value === "image/jpeg" || value === "image/png" || value === "image/webp";
+}
+
+function parseTutorImage(value: unknown): TutorImage | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value) || typeof value.mimeType !== "string" ||
+    !isAllowedImageType(value.mimeType) || typeof value.data !== "string") {
+    throw new Error("Изображение должно быть в формате JPG, PNG или WebP.");
+  }
+  if (!value.data || value.data.length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4 ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.data)) {
+    throw new Error("Не удалось прочитать изображение или его размер превышает 3 МБ.");
+  }
+  let bytes: Uint8Array;
+  try {
+    bytes = Uint8Array.from(atob(value.data), (character) => character.charCodeAt(0));
+  } catch {
+    throw new Error("Данные изображения имеют неверный формат.");
+  }
+  if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) {
+    throw new Error("Размер изображения не должен превышать 3 МБ.");
+  }
+  const isMatchingImage = value.mimeType === "image/jpeg"
+    ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+    : value.mimeType === "image/png"
+    ? bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+      bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a
+    : bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 &&
+      bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 &&
+      bytes[11] === 0x50;
+  if (!isMatchingImage) throw new Error("Формат файла не совпадает с типом изображения.");
+  return { mimeType: value.mimeType, data: value.data };
+}
+
+function optionalText(value: unknown, name: string, maximum = 4000): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string" || value.length > maximum) {
+    throw new Error(`Поле «${name}» должно содержать текст до ${maximum} символов.`);
+  }
+  return value.trim();
 }
 
 function sanitizeGeminiMessage(message: string, apiKey: string): string {
@@ -130,10 +176,23 @@ async function readQuizToken(token: unknown, apiKey: string): Promise<QuizPayloa
   return quiz;
 }
 
-async function askGemini(apiKey: string, systemInstruction: string, prompt: string, history: HistoryMessage[] = [], json = false) {
+async function askGemini(
+  apiKey: string,
+  systemInstruction: string,
+  prompt: string,
+  history: HistoryMessage[] = [],
+  json = false,
+  image?: TutorImage,
+) {
   const contents = [
     ...history.map(({ role, text }) => ({ role, parts: [{ text }] })),
-    { role: "user", parts: [{ text: prompt }] },
+    {
+      role: "user",
+      parts: [
+        ...(image ? [{ inlineData: { mimeType: image.mimeType, data: image.data } }] : []),
+        { text: prompt },
+      ],
+    },
   ];
   let response: Response;
   try {
@@ -194,10 +253,19 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json();
-    const problem = body.mode === "grade" ? "" : requireText(body.problem, "задача");
+    if (body.mode !== "explain" && body.image !== undefined) {
+      throw new Error("Изображение можно отправить только вместе с вопросом помощнику.");
+    }
+    const image = body.mode === "explain" ? parseTutorImage(body.image) : undefined;
+    const problem = body.mode === "grade"
+      ? ""
+      : body.mode === "explain"
+      ? optionalText(body.problem, "задача")
+      : requireText(body.problem, "задача");
     let text: string;
 
     if (body.mode === "explain") {
+      if (!problem && !image) throw new Error("Напиши вопрос или прикрепи изображение.");
       const history = Array.isArray(body.history)
         ? body.history.slice(-8).map((item: HistoryMessage) => {
           if (!item || !["user", "model"].includes(item.role) || typeof item.text !== "string" || item.text.length > 4000) {
@@ -209,8 +277,10 @@ Deno.serve(async (request) => {
       text = await askGemini(
         apiKey,
         "Ты доброжелательный русскоязычный репетитор. Пиши естественно и понятно для школьника: коротко представь, что нужно найти или понять, затем объясни решение по пронумерованным шагам и закончи ясным итогом. Используй короткие предложения, без канцелярита, лишнего жаргона и повторов. Объясняй, почему выполняется каждый важный шаг. Если используешь математический или предметный термин, сразу поясни его простыми словами. Подстраивай объяснение под предмет и возраст только если пользователь прямо указал их в задаче или истории. Сохраняй формулы и обозначения точными и поясняй смысл символов, если это нужно для понимания. Проверяй расчёты и опирайся на условие и достоверные сведения; не выдумывай факты и не угадывай недостающие данные. Если для решения не хватает условия, сначала задай конкретный уточняющий вопрос. Не добавляй лишнее задание в конце, если оно не помогает понять ответ.",
-        problem,
+        problem || "Внимательно прочитай изображение и объясни задачу на нём простыми словами и по шагам. Если условие неразборчиво, попроси прислать более чёткое фото.",
         history,
+        false,
+        image,
       );
       return jsonResponse({ text });
     }
