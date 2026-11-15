@@ -109,6 +109,12 @@
     .chat-message.assistant { background: #f0f5ff; }
     .chat-message.user { margin-left: 12%; background: #e8f0ff; white-space: pre-wrap; }
     .chat-message p { margin: 0; white-space: pre-wrap; }
+    .chat-message img { display: block; width: min(100%, 360px); max-height: 280px; margin-top: 10px; border-radius: 8px; object-fit: contain; object-position: left; background: #e8edf5; }
+    .study-attachment-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .study-attachment-actions button { width: auto; margin: 0; }
+    .study-attachment { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px; border: 1px solid #bdc9dc; border-radius: 10px; background: #f7f9fd; }
+    .study-attachment img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+    .study-attachment-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
     .chat-tools button { width: auto; }
     .quiz-box { margin-top: 18px; padding: 16px; border: 1px solid #d5e0f2; border-radius: 12px; }
@@ -350,7 +356,19 @@
         </div>
         <form id="studyForm">
           <label for="problem">Твоя задача или вопрос</label>
-          <textarea id="problem" class="text-input" maxlength="4000" required placeholder="Например: реши уравнение 3x + 5 = 20 и объясни каждый шаг"></textarea>
+          <textarea id="problem" class="text-input" maxlength="4000" placeholder="Например: реши уравнение 3x + 5 = 20 и объясни каждый шаг"></textarea>
+          <div id="studyAttachment" class="study-attachment" hidden>
+            <img id="studyAttachmentPreview" alt="Предпросмотр изображения задачи">
+            <span id="studyAttachmentName" class="study-attachment-name"></span>
+            <button id="removeStudyAttachment" class="secondary-button" type="button">Убрать</button>
+          </div>
+          <div class="study-attachment-actions">
+            <input id="studyGallery" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Выбрать изображение из файлов" hidden>
+            <input id="studyCamera" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="Сделать снимок камерой" hidden>
+            <button id="studyGalleryButton" class="secondary-button" type="button">Выбрать фото</button>
+            <button id="studyCameraButton" class="secondary-button" type="button">Сделать снимок</button>
+          </div>
+          <p class="hint">Можно выбрать JPG, PNG или WebP до 3 МБ. Камера откроется только после нажатия; браузер или устройство могут запросить разрешение. Фото отправится помощнику для ответа и не сохраняется сайтом.</p>
           <button id="sendButton" type="submit">Объясни по шагам</button>
         </form>
         <div class="chat-tools">
@@ -1058,6 +1076,13 @@
     const logoutButton = document.querySelector("#logoutButton");
     const studyForm = document.querySelector("#studyForm");
     const problemInput = document.querySelector("#problem");
+    const studyGallery = document.querySelector("#studyGallery");
+    const studyCamera = document.querySelector("#studyCamera");
+    const studyGalleryButton = document.querySelector("#studyGalleryButton");
+    const studyCameraButton = document.querySelector("#studyCameraButton");
+    const studyAttachment = document.querySelector("#studyAttachment");
+    const studyAttachmentPreview = document.querySelector("#studyAttachmentPreview");
+    const studyAttachmentName = document.querySelector("#studyAttachmentName");
     const sendButton = document.querySelector("#sendButton");
     const studyStatus = document.querySelector("#studyStatus");
     const chatLog = document.querySelector("#chatLog");
@@ -1069,6 +1094,8 @@
     let lastProblem = "";
     let conversationHistory = [];
     let currentQuiz;
+    let pendingStudyImage;
+    let pendingStudyImageUrl;
 
     function setAuthStatus(message, isError = false) {
       authStatus.textContent = message;
@@ -1076,15 +1103,71 @@
       authStatus.classList.toggle("success", Boolean(message) && !isError);
     }
 
-    function appendMessage(role, text) {
+    function appendMessage(role, text, imageUrl) {
       const message = document.createElement("div");
       message.className = `chat-message ${role}`;
       const paragraph = document.createElement("p");
       paragraph.textContent = text;
       message.append(paragraph);
+      if (imageUrl) {
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = "Изображение задачи";
+        message.append(image);
+      }
       chatLog.append(message);
       message.scrollIntoView({ block: "nearest", behavior: "smooth" });
       return message;
+    }
+
+    function clearStudyAttachment() {
+      if (pendingStudyImageUrl) URL.revokeObjectURL(pendingStudyImageUrl);
+      pendingStudyImage = null;
+      pendingStudyImageUrl = null;
+      studyAttachmentPreview.removeAttribute("src");
+      studyAttachmentName.textContent = "";
+      studyAttachment.hidden = true;
+      studyGallery.value = "";
+      studyCamera.value = "";
+    }
+
+    function selectStudyImage(input) {
+      const image = input.files[0];
+      input.value = "";
+      if (!image) return;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(image.type)) {
+        studyStatus.textContent = "Выбери изображение JPG, PNG или WebP.";
+        studyStatus.classList.add("error");
+        return;
+      }
+      if (image.size > 3 * 1024 * 1024) {
+        studyStatus.textContent = "Размер изображения не должен превышать 3 МБ.";
+        studyStatus.classList.add("error");
+        return;
+      }
+      clearStudyAttachment();
+      pendingStudyImage = image;
+      pendingStudyImageUrl = URL.createObjectURL(image);
+      studyAttachmentPreview.src = pendingStudyImageUrl;
+      studyAttachmentName.textContent = image.name || "Изображение задачи";
+      studyAttachment.hidden = false;
+      studyStatus.classList.remove("error");
+      studyStatus.textContent = "Изображение прикреплено. Напиши вопрос или отправь фото без текста.";
+    }
+
+    function readStudyImage(image) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result !== "string") {
+            reject(new Error("Не удалось прочитать изображение."));
+            return;
+          }
+          resolve(reader.result.slice(reader.result.indexOf(",") + 1));
+        };
+        reader.onerror = () => reject(new Error("Не удалось прочитать изображение."));
+        reader.readAsDataURL(image);
+      });
     }
 
     function showAccount(user) {
@@ -1093,6 +1176,7 @@
       studyPanel.hidden = !signedIn;
       if (signedIn) accountLabel.textContent = `Ты вошёл как ${user.email}`;
       else {
+        clearStudyAttachment();
         conversationHistory = [];
         lastProblem = "";
         currentQuiz = null;
@@ -1203,24 +1287,50 @@
       }
     });
 
+    studyGalleryButton.addEventListener("click", () => studyGallery.click());
+    studyCameraButton.addEventListener("click", () => studyCamera.click());
+    studyGallery.addEventListener("change", () => selectStudyImage(studyGallery));
+    studyCamera.addEventListener("change", () => selectStudyImage(studyCamera));
+    document.querySelector("#removeStudyAttachment").addEventListener("click", () => {
+      clearStudyAttachment();
+      studyStatus.classList.remove("error");
+      studyStatus.textContent = "Изображение убрано.";
+    });
+
     studyForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const problem = problemInput.value.trim();
-      if (!problem) return;
-      lastProblem = problem;
+      const image = pendingStudyImage;
+      if (!problem && !image) {
+        studyStatus.textContent = "Напиши вопрос или прикрепи изображение.";
+        studyStatus.classList.add("error");
+        return;
+      }
+      lastProblem = problem || "задача на изображении";
       sendButton.disabled = true;
+      studyGalleryButton.disabled = true;
+      studyCameraButton.disabled = true;
       videoButton.disabled = true;
       quizButton.disabled = true;
       quizBox.hidden = true;
       studyStatus.classList.remove("error");
       studyStatus.textContent = "Подбираю объяснение…";
-      appendMessage("user", problem);
       try {
-        const answer = await invokeTutor({ mode: "explain", problem, history: conversationHistory.slice(-8) });
+        const imageData = image ? await readStudyImage(image) : undefined;
+        const payload = {
+          mode: "explain",
+          problem,
+          history: conversationHistory.slice(-8),
+          ...(image ? { image: { mimeType: image.type, data: imageData } } : {}),
+        };
+        const answer = await invokeTutor(payload);
         if (typeof answer.text !== "string" || !answer.text.trim()) throw new Error("В ответе помощника нет текста.");
+        const displayedProblem = problem || "Объясни задачу на изображении";
+        appendMessage("user", displayedProblem, imageData ? `data:${image.type};base64,${imageData}` : undefined);
         appendMessage("assistant", answer.text);
-        conversationHistory.push({ role: "user", text: problem }, { role: "model", text: answer.text });
+        conversationHistory.push({ role: "user", text: displayedProblem }, { role: "model", text: answer.text });
         problemInput.value = "";
+        clearStudyAttachment();
         videoButton.disabled = false;
         quizButton.disabled = false;
         studyStatus.textContent = "Объяснение готово. Можно задать следующий вопрос, найти видео или пройти тест.";
@@ -1229,6 +1339,8 @@
         studyStatus.classList.add("error");
       } finally {
         sendButton.disabled = false;
+        studyGalleryButton.disabled = false;
+        studyCameraButton.disabled = false;
       }
     });
 
