@@ -129,6 +129,11 @@
     .conversation-list { display: grid; max-height: 220px; gap: 6px; overflow-y: auto; margin-top: 10px; }
     .conversation-item { width: 100%; margin: 0; padding: 10px 12px; border: 1px solid #d5e0f2; border-radius: 9px; background: #f7f9fd; color: #34425b; text-align: left; overflow-wrap: anywhere; }
     .conversation-item[aria-current="true"] { border-color: #2864d7; background: #e8f0ff; color: #2058bf; font-weight: bold; }
+    .active-conversation-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+    .active-conversation-title { min-width: 0; font-weight: bold; overflow-wrap: anywhere; }
+    .active-conversation-header button, .rename-conversation-form button { width: auto; margin: 0; }
+    .rename-conversation-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+    .rename-conversation-form input { min-width: 0; flex: 1 1 180px; }
     .retry-save-button { width: auto !important; margin: 8px 0 0 !important; }
     .quiz-box { margin-top: 18px; padding: 16px; border: 1px solid #d5e0f2; border-radius: 12px; }
     .quiz-option { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-weight: normal; }
@@ -370,6 +375,15 @@
         </div>
         <p id="historyStatus" class="hint" role="status" aria-live="polite"></p>
         <div id="conversationList" class="conversation-list" aria-label="Сохранённые разговоры"></div>
+        <div id="activeConversationHeader" class="active-conversation-header" hidden>
+          <span id="activeConversationTitle" class="active-conversation-title"></span>
+          <button id="renameConversationButton" class="secondary-button" type="button">Переименовать</button>
+        </div>
+        <form id="renameConversationForm" class="rename-conversation-form" hidden>
+          <input id="renameConversationInput" type="text" maxlength="120" required aria-label="Название разговора">
+          <button id="saveConversationTitleButton" class="secondary-button" type="submit">Сохранить</button>
+          <button id="cancelConversationTitleButton" class="secondary-button" type="button">Отмена</button>
+        </form>
         <div id="chatLog" class="chat-log" role="log" aria-live="polite">
           <div class="chat-message assistant"><p>Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.</p></div>
         </div>
@@ -1108,6 +1122,13 @@
     const historyStatus = document.querySelector("#historyStatus");
     const conversationList = document.querySelector("#conversationList");
     const newChatButton = document.querySelector("#newChatButton");
+    const activeConversationHeader = document.querySelector("#activeConversationHeader");
+    const activeConversationTitle = document.querySelector("#activeConversationTitle");
+    const renameConversationButton = document.querySelector("#renameConversationButton");
+    const renameConversationForm = document.querySelector("#renameConversationForm");
+    const renameConversationInput = document.querySelector("#renameConversationInput");
+    const saveConversationTitleButton = document.querySelector("#saveConversationTitleButton");
+    const cancelConversationTitleButton = document.querySelector("#cancelConversationTitleButton");
     const retrySaveButton = document.querySelector("#retrySaveButton");
     const chatLog = document.querySelector("#chatLog");
     const videoButton = document.querySelector("#videoButton");
@@ -1124,12 +1145,15 @@
     let authGeneration = 0;
     let historyLoadGeneration = 0;
     let studyRequestGeneration = 0;
+    let conversationRenameGeneration = 0;
     let conversations = [];
     let currentConversationId = null;
     let currentConversationTitle = "";
+    let currentConversationTitleIsCustom = false;
     let pendingTurnSave = null;
     let isStudyRequestPending = false;
     let isHistoryLoading = false;
+    let isConversationRenamePending = false;
 
     function setAuthStatus(message, isError = false) {
       authStatus.textContent = message;
@@ -1313,12 +1337,25 @@
       studyStatus.classList.toggle("error", isError);
     }
 
+    function showConversationTitle(title) {
+      activeConversationTitle.textContent = title;
+      activeConversationTitle.hidden = false;
+      activeConversationHeader.hidden = !currentConversationId;
+      renameConversationForm.hidden = true;
+      renameConversationButton.hidden = !currentConversationId;
+    }
+
     function resetConversationView() {
       currentConversationId = null;
       currentConversationTitle = "";
+      currentConversationTitleIsCustom = false;
       conversationHistory = [];
       lastProblem = "";
       currentQuiz = null;
+      activeConversationTitle.textContent = "";
+      renameConversationInput.value = "";
+      activeConversationHeader.hidden = true;
+      renameConversationForm.hidden = true;
       videoButton.disabled = true;
       quizButton.disabled = true;
       quizBox.replaceChildren();
@@ -1328,9 +1365,13 @@
     }
 
     function updateHistoryControls() {
-      const disabled = isStudyRequestPending || isHistoryLoading || Boolean(pendingTurnSave);
+      const disabled = isStudyRequestPending || isHistoryLoading || isConversationRenamePending ||
+        Boolean(pendingTurnSave);
       newChatButton.disabled = disabled;
-      logoutButton.disabled = isStudyRequestPending || Boolean(pendingTurnSave);
+      logoutButton.disabled = isStudyRequestPending || isConversationRenamePending || Boolean(pendingTurnSave);
+      renameConversationButton.disabled = disabled;
+      saveConversationTitleButton.disabled = disabled;
+      cancelConversationTitleButton.disabled = disabled;
       conversationList.querySelectorAll("button").forEach((button) => { button.disabled = disabled; });
       sendButton.disabled = disabled;
     }
@@ -1364,7 +1405,7 @@
       try {
         const { data, error } = await supabaseClient
           .from("study_conversations")
-          .select("id, title, updated_at")
+          .select("id, title, title_is_custom, updated_at")
           .eq("user_id", userId)
           .order("updated_at", { ascending: false });
         if (error) throw error;
@@ -1411,6 +1452,8 @@
         if (!conversation) throw new Error("Разговор не найден в истории.");
         currentConversationId = conversation.id;
         currentConversationTitle = conversation.title;
+        currentConversationTitleIsCustom = conversation.title_is_custom;
+        showConversationTitle(currentConversationTitle);
         conversationHistory = (data || []).map((message) => ({
           role: message.role === "assistant" ? "model" : "user",
           text: message.content
@@ -1454,7 +1497,9 @@
       pendingTurnSave = null;
       isHistoryLoading = false;
       isStudyRequestPending = false;
+      isConversationRenamePending = false;
       studyRequestGeneration++;
+      conversationRenameGeneration++;
       retrySaveButton.hidden = true;
       retrySaveButton.disabled = false;
       conversations = [];
@@ -1492,9 +1537,28 @@
       return data;
     }
 
-    function makeTurnSave(userId, conversationId, conversationTitle, problem, answer) {
+    function normalizeConversationTitle(value) {
+      if (typeof value !== "string") throw new Error("Название разговора должно быть текстом.");
+      const title = value.replace(/\s+/g, " ").trim();
+      if (!title || title.length > 120) {
+        throw new Error("Название должно содержать от 1 до 120 символов.");
+      }
+      return title;
+    }
+
+    function makeTurnSave(
+      userId,
+      conversationId,
+      conversationTitle,
+      conversationTitleIsCustom,
+      suggestedTitle,
+      problem,
+      answer
+    ) {
       const id = conversationId || crypto.randomUUID();
-      const title = conversationTitle || problem.replace(/\s+/g, " ").trim().slice(0, 120) || "Задача на изображении";
+      const title = conversationTitleIsCustom
+        ? conversationTitle
+        : normalizeConversationTitle(suggestedTitle);
       const now = new Date().toISOString();
       return {
         userId,
@@ -1502,6 +1566,7 @@
           id,
           user_id: userId,
           title,
+          title_is_custom: conversationTitleIsCustom,
           updated_at: now
         },
         messages: [
@@ -1536,17 +1601,36 @@
 
       const { error: updateError } = await supabaseClient
         .from("study_conversations")
-        .update({ updated_at: new Date().toISOString() })
+        .update({
+          title: turn.conversation.title,
+          updated_at: new Date().toISOString()
+        })
         .eq("id", turn.conversation.id)
-        .eq("user_id", turn.userId);
+        .eq("user_id", turn.userId)
+        .eq("title_is_custom", false);
       if (updateError) throw updateError;
+
+      const { data: persistedConversation, error: readError } = await supabaseClient
+        .from("study_conversations")
+        .select("id, title, title_is_custom, updated_at")
+        .eq("id", turn.conversation.id)
+        .eq("user_id", turn.userId)
+        .single();
+      if (readError) throw readError;
 
       if (currentUserId !== turn.userId) return;
       currentConversationId = turn.conversation.id;
-      currentConversationTitle = turn.conversation.title;
+      currentConversationTitle = persistedConversation.title;
+      currentConversationTitleIsCustom = persistedConversation.title_is_custom;
+      showConversationTitle(currentConversationTitle);
       const existing = conversations.find((item) => item.id === turn.conversation.id);
-      if (existing) existing.updated_at = new Date().toISOString();
-      else conversations.push({ ...turn.conversation });
+      if (existing) {
+        existing.title = persistedConversation.title;
+        existing.title_is_custom = persistedConversation.title_is_custom;
+        existing.updated_at = persistedConversation.updated_at;
+      } else {
+        conversations.push({ ...persistedConversation });
+      }
       conversations.sort((first, second) => Date.parse(second.updated_at) - Date.parse(first.updated_at));
       renderConversationList();
     }
@@ -1569,6 +1653,67 @@
       } finally {
         retrySaveButton.disabled = false;
         updateHistoryControls();
+      }
+    }
+
+    function closeConversationRename() {
+      renameConversationForm.hidden = true;
+      activeConversationTitle.hidden = false;
+      renameConversationButton.hidden = !currentConversationId;
+    }
+
+    async function saveConversationTitle(event) {
+      event.preventDefault();
+      if (!currentConversationId || !currentUserId || isConversationRenamePending) return;
+
+      let title;
+      try {
+        title = normalizeConversationTitle(renameConversationInput.value);
+      } catch (error) {
+        setStudyStatus(error.message, true);
+        renameConversationInput.focus();
+        return;
+      }
+
+      const conversationId = currentConversationId;
+      const userId = currentUserId;
+      const authRequestGeneration = authGeneration;
+      const requestGeneration = ++conversationRenameGeneration;
+      isConversationRenamePending = true;
+      updateHistoryControls();
+      setStudyStatus("Сохраняю название…");
+      try {
+        const { data, error } = await supabaseClient
+          .from("study_conversations")
+          .update({ title, title_is_custom: true })
+          .eq("id", conversationId)
+          .eq("user_id", userId)
+          .select("id, title, title_is_custom, updated_at")
+          .single();
+        if (error) throw error;
+        if (requestGeneration !== conversationRenameGeneration || authRequestGeneration !== authGeneration ||
+          userId !== currentUserId) return;
+
+        currentConversationTitle = data.title;
+        currentConversationTitleIsCustom = data.title_is_custom;
+        showConversationTitle(currentConversationTitle);
+        const conversation = conversations.find((item) => item.id === conversationId);
+        if (conversation) {
+          conversation.title = data.title;
+          conversation.title_is_custom = data.title_is_custom;
+        }
+        renderConversationList();
+        setStudyStatus("Название разговора сохранено.");
+      } catch (error) {
+        if (requestGeneration === conversationRenameGeneration && authRequestGeneration === authGeneration &&
+          userId === currentUserId) {
+          setStudyStatus(`Не удалось сохранить название: ${error.message}`, true);
+        }
+      } finally {
+        if (requestGeneration === conversationRenameGeneration) {
+          isConversationRenamePending = false;
+          updateHistoryControls();
+        }
       }
     }
 
@@ -1664,6 +1809,16 @@
       setHistoryStatus(conversations.length ? "Начни новый разговор." : "Сохранённых разговоров пока нет.");
     });
 
+    renameConversationButton.addEventListener("click", () => {
+      if (!currentConversationId || isConversationRenamePending) return;
+      renameConversationInput.value = currentConversationTitle;
+      activeConversationTitle.hidden = true;
+      renameConversationButton.hidden = true;
+      renameConversationForm.hidden = false;
+      renameConversationInput.focus();
+    });
+    renameConversationForm.addEventListener("submit", saveConversationTitle);
+    cancelConversationTitleButton.addEventListener("click", closeConversationRename);
     retrySaveButton.addEventListener("click", retryStudyTurnSave);
     studyGalleryButton.addEventListener("click", () => studyGallery.click());
     studyCameraButton.addEventListener("click", () => studyCamera.click());
@@ -1697,6 +1852,7 @@
       const requestGeneration = ++studyRequestGeneration;
       const requestConversationId = currentConversationId;
       const requestConversationTitle = currentConversationTitle;
+      const requestConversationTitleIsCustom = currentConversationTitleIsCustom;
       const requestHistory = conversationHistory.slice(-8);
       isStudyRequestPending = true;
       updateHistoryControls();
@@ -1717,6 +1873,7 @@
         };
         const answer = await invokeTutor(payload);
         if (typeof answer.text !== "string" || !answer.text.trim()) throw new Error("В ответе помощника нет текста.");
+        const suggestedTitle = normalizeConversationTitle(answer.title);
         if (requestGeneration !== studyRequestGeneration || requestAuthGeneration !== authGeneration ||
           requestUserId !== currentUserId) return;
         const displayedProblem = problem || "Объясни задачу на изображении";
@@ -1731,11 +1888,15 @@
           requestUserId,
           requestConversationId,
           requestConversationTitle,
+          requestConversationTitleIsCustom,
+          suggestedTitle,
           displayedProblem,
           answer.text
         );
         currentConversationId = turn.conversation.id;
         currentConversationTitle = turn.conversation.title;
+        currentConversationTitleIsCustom = turn.conversation.title_is_custom;
+        showConversationTitle(currentConversationTitle);
         try {
           await persistStudyTurn(turn);
           if (requestGeneration === studyRequestGeneration && requestAuthGeneration === authGeneration &&
