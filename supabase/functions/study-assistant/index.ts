@@ -14,9 +14,16 @@ type QuizPayload = {
   expiresAt: number;
 };
 
-class GeminiResponseError extends Error {}
+class GeminiResponseError extends Error {
+  constructor(message: string, readonly fallbackEligible = false) {
+    super(message);
+  }
+}
+
+class OpenAIResponseError extends Error {}
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+const GENERIC_AI_ERROR = "Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -117,6 +124,17 @@ function geminiErrorMessage(httpStatus: number, body: unknown, apiKey: string): 
   return `${prefix}${diagnostic.slice(0, availableMessageLength)}${keyAdvice}`.slice(0, 200);
 }
 
+function shouldFallbackToOpenAI(httpStatus: number, body: unknown): boolean {
+  if (httpStatus === 503) return true;
+  if (httpStatus !== 429 || !isRecord(body) || !isRecord(body.error)) return false;
+  const error = body.error;
+  const status = typeof error.status === "string" ? error.status : "";
+  const message = typeof error.message === "string" ? error.message.slice(0, 2000) : "";
+  return status === "RESOURCE_EXHAUSTED" || status === "RATE_LIMIT_EXCEEDED" ||
+    /\b(?:rate[- ]?limit(?:ed|ing)?|quota(?:\s+(?:exceeded|limit|exhausted))?|capacity|overload(?:ed)?|resource[_ -]?exhausted|too many requests)\b/i
+      .test(message);
+}
+
 function requireText(value: unknown, name: string, maximum = 4000): string {
   if (typeof value !== "string" || !value.trim() || value.length > maximum) {
     throw new Error(`Поле «${name}» должно содержать текст до ${maximum} символов.`);
@@ -213,10 +231,11 @@ async function askGemini(
       },
     );
   } catch {
-    throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
+    throw new Error(GENERIC_AI_ERROR);
   }
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
+    const fallbackEligible = shouldFallbackToOpenAI(response.status, errorBody);
     const upstreamMessage = errorBody?.error?.message;
     const safeMessage = typeof upstreamMessage === "string"
       ? upstreamMessage
@@ -230,15 +249,120 @@ async function askGemini(
       : "No error message in Gemini response";
     console.error("Gemini request failed:", { status: response.status, message: safeMessage });
     const diagnostic = geminiErrorMessage(response.status, errorBody, apiKey);
-    if (!diagnostic) {
-      throw new Error("Сервис ИИ временно недоступен. Проверь ключ Gemini и настройки функции в Supabase.");
-    }
-    throw new GeminiResponseError(diagnostic);
+    if (!diagnostic && !fallbackEligible) throw new Error(GENERIC_AI_ERROR);
+    throw new GeminiResponseError(diagnostic ?? GENERIC_AI_ERROR, fallbackEligible);
   }
   const result = await response.json();
   const text = result?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text || "").join("").trim();
   if (!text) throw new Error("ИИ не вернул ответ. Попробуй задать вопрос иначе.");
   return text;
+}
+
+async function askOpenAI(
+  apiKey: string,
+  systemInstruction: string,
+  prompt: string,
+  history: HistoryMessage[] = [],
+  json = false,
+  image?: TutorImage,
+) {
+  const input = [
+    ...history.map(({ role, text }) => ({
+      role: role === "model" ? "assistant" : "user",
+      content: text,
+    })),
+    {
+      role: "user",
+      content: [
+        ...(image
+          ? [{
+            type: "input_image",
+            image_url: `data:${image.mimeType};base64,${image.data}`,
+            detail: "auto",
+          }]
+          : []),
+        { type: "input_text", text: prompt },
+      ],
+    },
+  ];
+  let response: Response;
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: Deno.env.get("OPENAI_MODEL")?.trim() || "gpt-4.1-mini",
+        instructions: systemInstruction,
+        input,
+        max_output_tokens: 1200,
+        ...(json ? { text: { format: { type: "json_object" } } } : {}),
+      }),
+    });
+  } catch {
+    console.error("OpenAI request failed:", { status: "network", message: "No response from OpenAI API" });
+    throw new OpenAIResponseError(GENERIC_AI_ERROR);
+  }
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    const errorMessage = isRecord(errorBody) && isRecord(errorBody.error) &&
+        typeof errorBody.error.message === "string"
+      ? sanitizeGeminiMessage(errorBody.error.message.slice(0, 2000), apiKey)
+      : "No error message in OpenAI response";
+    const errorType = isRecord(errorBody) && isRecord(errorBody.error) &&
+        typeof errorBody.error.code === "string" && /^[A-Za-z0-9_-]{1,60}$/.test(errorBody.error.code)
+      ? errorBody.error.code
+      : "unknown";
+    console.error("OpenAI request failed:", {
+      status: response.status,
+      type: errorType,
+      message: errorMessage.slice(0, 1000),
+    });
+    throw new OpenAIResponseError(GENERIC_AI_ERROR);
+  }
+  const result = await response.json();
+  const outputText: string[] = [];
+  if (isRecord(result) && Array.isArray(result.output)) {
+    for (const item of result.output) {
+      if (!isRecord(item) || item.type !== "message" || !Array.isArray(item.content)) continue;
+      for (const block of item.content) {
+        if (isRecord(block) && block.type === "output_text" && typeof block.text === "string") {
+          outputText.push(block.text);
+        }
+      }
+    }
+  }
+  const text = outputText.join("").trim();
+  if (!text) throw new Error("ИИ не вернул ответ. Попробуй задать вопрос иначе.");
+  return text;
+}
+
+async function askWithFallback(
+  geminiApiKey: string,
+  systemInstruction: string,
+  prompt: string,
+  history: HistoryMessage[] = [],
+  json = false,
+  image?: TutorImage,
+) {
+  try {
+    return await askGemini(geminiApiKey, systemInstruction, prompt, history, json, image);
+  } catch (error) {
+    if (!(error instanceof GeminiResponseError) || !error.fallbackEligible) throw error;
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAIApiKey) {
+      console.error("OpenAI fallback unavailable: OPENAI_API_KEY is not configured");
+      throw error;
+    }
+    try {
+      return await askOpenAI(openAIApiKey, systemInstruction, prompt, history, json, image);
+    } catch (fallbackError) {
+      if (fallbackError instanceof OpenAIResponseError) throw error;
+      throw fallbackError;
+    }
+  }
 }
 
 Deno.serve(async (request) => {
@@ -274,7 +398,7 @@ Deno.serve(async (request) => {
           return { role: item.role, text: item.text };
         })
         : [];
-      text = await askGemini(
+      text = await askWithFallback(
         apiKey,
         "Ты доброжелательный русскоязычный репетитор. Пиши естественно и понятно для школьника: коротко представь, что нужно найти или понять, затем объясни решение по пронумерованным шагам и закончи ясным итогом. Используй короткие предложения, без канцелярита, лишнего жаргона и повторов. Объясняй, почему выполняется каждый важный шаг. Если используешь математический или предметный термин, сразу поясни его простыми словами. Подстраивай объяснение под предмет и возраст только если пользователь прямо указал их в задаче или истории. Сохраняй формулы и обозначения точными и поясняй смысл символов, если это нужно для понимания. Проверяй расчёты и опирайся на условие и достоверные сведения; не выдумывай факты и не угадывай недостающие данные. Если для решения не хватает условия, сначала задай конкретный уточняющий вопрос. Не добавляй лишнее задание в конце, если оно не помогает понять ответ. Верни только JSON-объект с полями answer и title. В answer помести полное объяснение в обычном Markdown. В title дай короткое название всего разговора на русском (3–7 слов, не длиннее 80 символов), учитывая историю и новый вопрос; не используй кавычки, вступление или точку в конце.",
         problem || "Внимательно прочитай изображение и объясни задачу на нём простыми словами и по шагам. Если условие неразборчиво, попроси прислать более чёткое фото.",
@@ -301,7 +425,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.mode === "quiz") {
-      text = await askGemini(
+      text = await askWithFallback(
         apiKey,
         "Ты составляешь короткие учебные тесты на простом естественном русском языке. Верни только JSON-объект с полями question (строка), options (ровно 4 строки), answerIndex (целое число от 0 до 3) и explanation (краткое и понятное объяснение верного ответа). Проверь понимание темы, а не запоминание случайных деталей. Подстраивай формулировки под предмет и возраст только если они указаны пользователем. Если используешь специальный термин, поясни его простыми словами. Используй только сведения из задачи и надёжные общеизвестные правила; не выдумывай факты и не добавляй неподтверждённые условия. Вопрос и варианты должны быть короткими, однозначными и соответствовать теме.",
         `Составь один подходящий вопрос с четырьмя вариантами ответа по теме этой задачи. Не включай решение в вопрос. В объяснении укажи, почему верный вариант подходит. Тема/задача: ${problem}`,
