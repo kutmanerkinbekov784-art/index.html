@@ -101,9 +101,6 @@
     .auth-box { max-width: 430px; margin: 24px auto 0; }
     .auth-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
     .auth-actions button { width: auto; margin: 0; }
-    .account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
-    .account-row p { min-width: 0; overflow-wrap: anywhere; }
-    .account-row .secondary-button { flex: 0 0 auto; }
     .chat-log { display: grid; gap: 12px; margin: 20px 0; }
     .chat-message { padding: 14px 16px; border-radius: 12px; line-height: 1.6; overflow-wrap: anywhere; }
     .chat-message.assistant { background: #f0f5ff; }
@@ -123,6 +120,70 @@
     .chat-message code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
     .chat-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
     .chat-tools button { width: auto; }
+    .conversation-list { display: grid; max-height: 220px; gap: 6px; overflow-y: auto; margin-top: 10px; }
+    .conversation-item { width: 100%; margin: 0; padding: 10px 12px; border: 1px solid #d5e0f2; border-radius: 9px; background: #f7f9fd; color: #34425b; text-align: left; overflow-wrap: anywhere; }
+    .conversation-item[aria-current="true"] { border-color: #2864d7; background: #e8f0ff; color: #2058bf; font-weight: bold; }
+    .active-conversation-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+    .active-conversation-title { min-width: 0; font-weight: bold; overflow-wrap: anywhere; }
+    .active-conversation-header button, .rename-conversation-form button { width: auto; margin: 0; }
+    .rename-conversation-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+    .rename-conversation-form input { min-width: 0; flex: 1 1 180px; }
+    .account-menu-button {
+      display: grid;
+      width: 44px;
+      height: 48px;
+      flex: 0 0 44px;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #d5e0f2;
+      border-radius: 12px;
+      background: white;
+      color: #2864d7;
+      box-shadow: 0 4px 16px #294b8520;
+      font-size: 26px;
+      line-height: 1;
+    }
+    .account-menu-button:hover { background: #e8f0ff; }
+    .drawer-backdrop {
+      position: fixed;
+      z-index: 29;
+      inset: 0;
+      background: #17233c66;
+    }
+    .account-drawer {
+      position: fixed;
+      z-index: 30;
+      top: 0;
+      right: 0;
+      display: flex;
+      width: min(390px, 92vw);
+      height: 100dvh;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px;
+      background: white;
+      box-shadow: -8px 0 32px #17233c24;
+    }
+    .account-drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .account-drawer-header h2 { margin: 0; }
+    .account-drawer-header button { width: auto; margin: 0; padding: 8px 12px; }
+    .account-details { margin-top: 18px; padding: 14px; border: 1px solid #e0e8f4; border-radius: 12px; background: #f7f9fd; }
+    .account-details h3, .drawer-history-heading h3 { margin: 0 0 10px; color: #2864d7; }
+    .account-email { margin: 0; overflow-wrap: anywhere; }
+    .password-change-form { margin-top: 14px; }
+    .password-change-form label { margin: 0 0 6px; font-size: 14px; }
+    .password-input-row { display: flex; gap: 6px; }
+    .password-input-row input { min-width: 0; flex: 1; padding: 10px; }
+    .password-input-row button { width: auto; margin: 0; padding: 8px 10px; }
+    .password-change-form > button { width: 100%; margin-top: 8px; padding: 10px; }
+    .drawer-status { min-height: 1.5em; margin: 8px 0 0; }
+    .drawer-history { display: flex; min-height: 0; flex: 1; flex-direction: column; margin-top: 20px; }
+    .drawer-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .drawer-history-heading button { width: auto; margin: 0; padding: 8px 10px; }
+    .drawer-history .conversation-list { max-height: none; flex: 1; align-content: start; overflow-y: auto; }
+    .account-drawer-footer { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e8f4; }
+    .account-drawer-footer button { width: 100%; margin: 0; }
+    .retry-save-button { width: auto !important; margin: 8px 0 0 !important; }
     .quiz-box { margin-top: 18px; padding: 16px; border: 1px solid #d5e0f2; border-radius: 12px; }
     .quiz-option { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-weight: normal; }
     .quiz-option input { width: auto; margin: 2px 0 0; }
@@ -237,6 +298,9 @@
       .site-nav.open { display: flex; }
       .nav-button { width: 100%; text-align: left; }
       .page { margin: 18px auto; padding: 24px 18px; border-radius: 16px; }
+      .account-menu-button { order: 1; width: 40px; height: 40px; flex-basis: 40px; }
+      .site-nav { order: 2; }
+      .account-drawer { width: min(360px, 94vw); padding: 16px; }
     }
   </style>
 </head>
@@ -249,7 +313,41 @@
       <button class="nav-button" type="button" data-page="collegePage" aria-current="false">Оценки в колледже</button>
       <button class="nav-button" type="button" data-page="studyPage" aria-current="page">Помощник по учёбе</button>
     </nav>
+    <button id="accountMenuButton" class="account-menu-button" type="button" aria-label="Аккаунт и история чатов" aria-expanded="false" aria-controls="accountDrawer" hidden>⋮</button>
   </header>
+  <div id="accountDrawerBackdrop" class="drawer-backdrop" hidden></div>
+  <aside id="accountDrawer" class="account-drawer" role="dialog" aria-modal="true" aria-label="Аккаунт и история чатов" aria-hidden="true" hidden>
+    <div class="account-drawer-header">
+      <h2>Аккаунт</h2>
+      <button id="closeAccountDrawer" class="secondary-button" type="button" aria-label="Закрыть панель">Закрыть</button>
+    </div>
+    <section class="account-details" aria-labelledby="accountDetailsTitle">
+      <h3 id="accountDetailsTitle">Информация об аккаунте</h3>
+      <p class="hint">Электронная почта</p>
+      <p id="accountEmail" class="account-email"></p>
+      <form id="passwordChangeForm" class="password-change-form">
+        <p class="hint">Текущий пароль нельзя посмотреть. Здесь можно задать новый.</p>
+        <label for="newAccountPassword">Новый пароль</label>
+        <div class="password-input-row">
+          <input id="newAccountPassword" type="password" autocomplete="new-password" minlength="6" required placeholder="Не короче 6 символов">
+          <button id="togglePasswordVisibility" class="secondary-button" type="button" aria-pressed="false">Показать</button>
+        </div>
+        <button id="changePasswordButton" class="secondary-button" type="submit">Сменить пароль</button>
+      </form>
+      <p id="accountStatus" class="hint drawer-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="drawer-history" aria-labelledby="drawerHistoryTitle">
+      <div class="drawer-history-heading">
+        <h3 id="drawerHistoryTitle">История чатов</h3>
+        <button id="newChatButton" class="secondary-button" type="button">Новый чат</button>
+      </div>
+      <p id="historyStatus" class="hint" role="status" aria-live="polite"></p>
+      <div id="conversationList" class="conversation-list" aria-label="Сохранённые разговоры"></div>
+    </section>
+    <div class="account-drawer-footer">
+      <button id="logoutButton" class="secondary-button" type="button">Выйти из аккаунта</button>
+    </div>
+  </aside>
 
   <main>
     <section id="gradesPage" class="page" hidden>
@@ -353,10 +451,15 @@
       </section>
 
       <section id="studyPanel" hidden>
-        <div class="account-row">
-          <p id="accountLabel" class="hint"></p>
-          <button id="logoutButton" class="secondary-button" type="button">Выйти</button>
+        <div id="activeConversationHeader" class="active-conversation-header" hidden>
+          <span id="activeConversationTitle" class="active-conversation-title"></span>
+          <button id="renameConversationButton" class="secondary-button" type="button">Переименовать</button>
         </div>
+        <form id="renameConversationForm" class="rename-conversation-form" hidden>
+          <input id="renameConversationInput" type="text" maxlength="120" required aria-label="Название разговора">
+          <button id="saveConversationTitleButton" class="secondary-button" type="submit">Сохранить</button>
+          <button id="cancelConversationTitleButton" class="secondary-button" type="button">Отмена</button>
+        </form>
         <div id="chatLog" class="chat-log" role="log" aria-live="polite">
           <div class="chat-message assistant"><p>Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.</p></div>
         </div>
@@ -382,6 +485,7 @@
           <button id="quizButton" class="secondary-button" type="button" disabled>Приступим к тесту по этой теме</button>
         </div>
         <p id="studyStatus" class="hint" role="status" aria-live="polite"></p>
+        <button id="retrySaveButton" class="secondary-button retry-save-button" type="button" hidden>Повторить сохранение</button>
         <section id="quizBox" class="quiz-box" aria-live="polite" hidden></section>
       </section>
     </section>
@@ -1078,7 +1182,16 @@
     const authStatus = document.querySelector("#authStatus");
     const studyPanel = document.querySelector("#studyPanel");
     const authPanel = document.querySelector("#authPanel");
-    const accountLabel = document.querySelector("#accountLabel");
+    const accountMenuButton = document.querySelector("#accountMenuButton");
+    const accountDrawer = document.querySelector("#accountDrawer");
+    const accountDrawerBackdrop = document.querySelector("#accountDrawerBackdrop");
+    const closeAccountDrawerButton = document.querySelector("#closeAccountDrawer");
+    const accountEmail = document.querySelector("#accountEmail");
+    const accountStatus = document.querySelector("#accountStatus");
+    const passwordChangeForm = document.querySelector("#passwordChangeForm");
+    const newAccountPassword = document.querySelector("#newAccountPassword");
+    const togglePasswordVisibility = document.querySelector("#togglePasswordVisibility");
+    const changePasswordButton = document.querySelector("#changePasswordButton");
     const logoutButton = document.querySelector("#logoutButton");
     const studyForm = document.querySelector("#studyForm");
     const problemInput = document.querySelector("#problem");
@@ -1091,6 +1204,17 @@
     const studyAttachmentName = document.querySelector("#studyAttachmentName");
     const sendButton = document.querySelector("#sendButton");
     const studyStatus = document.querySelector("#studyStatus");
+    const historyStatus = document.querySelector("#historyStatus");
+    const conversationList = document.querySelector("#conversationList");
+    const newChatButton = document.querySelector("#newChatButton");
+    const activeConversationHeader = document.querySelector("#activeConversationHeader");
+    const activeConversationTitle = document.querySelector("#activeConversationTitle");
+    const renameConversationButton = document.querySelector("#renameConversationButton");
+    const renameConversationForm = document.querySelector("#renameConversationForm");
+    const renameConversationInput = document.querySelector("#renameConversationInput");
+    const saveConversationTitleButton = document.querySelector("#saveConversationTitleButton");
+    const cancelConversationTitleButton = document.querySelector("#cancelConversationTitleButton");
+    const retrySaveButton = document.querySelector("#retrySaveButton");
     const chatLog = document.querySelector("#chatLog");
     const videoButton = document.querySelector("#videoButton");
     const quizButton = document.querySelector("#quizButton");
@@ -1102,6 +1226,20 @@
     let currentQuiz;
     let pendingStudyImage;
     let pendingStudyImageUrl;
+    let currentUserId = null;
+    let authGeneration = 0;
+    let historyLoadGeneration = 0;
+    let studyRequestGeneration = 0;
+    let conversationRenameGeneration = 0;
+    let conversations = [];
+    let currentConversationId = null;
+    let currentConversationTitle = "";
+    let currentConversationTitleIsCustom = false;
+    let pendingTurnSave = null;
+    let isStudyRequestPending = false;
+    let isHistoryLoading = false;
+    let isConversationRenamePending = false;
+    let isPasswordChangePending = false;
 
     function setAuthStatus(message, isError = false) {
       authStatus.textContent = message;
@@ -1275,22 +1413,235 @@
       });
     }
 
-    function showAccount(user) {
-      const signedIn = Boolean(user);
-      authPanel.hidden = signedIn;
-      studyPanel.hidden = !signedIn;
-      if (signedIn) accountLabel.textContent = `Ты вошёл как ${user.email}`;
-      else {
-        clearStudyAttachment();
-        conversationHistory = [];
-        lastProblem = "";
+    function setHistoryStatus(message, isError = false) {
+      historyStatus.textContent = message;
+      historyStatus.classList.toggle("error", isError);
+    }
+
+    function historyLoadErrorMessage(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (error?.code === "PGRST205" || error?.code === "PGRST204" ||
+        /could not find the (table|column).*schema cache/i.test(message)) {
+        return "История ещё не настроена. Выполни SQL-файлы из supabase/migrations по порядку в Supabase → SQL Editor.";
+      }
+      return `Не удалось загрузить историю: ${message}`;
+    }
+
+    function setStudyStatus(message, isError = false) {
+      studyStatus.textContent = message;
+      studyStatus.classList.toggle("error", isError);
+    }
+
+    function setAccountStatus(message, isError = false) {
+      accountStatus.textContent = message;
+      accountStatus.classList.toggle("error", isError);
+      accountStatus.classList.toggle("success", Boolean(message) && !isError);
+    }
+
+    function setAccountDrawerOpen(isOpen) {
+      const wasOpen = !accountDrawer.hidden;
+      const shouldOpen = isOpen && Boolean(currentUserId);
+      accountDrawer.hidden = !shouldOpen;
+      accountDrawerBackdrop.hidden = !shouldOpen;
+      accountDrawer.setAttribute("aria-hidden", String(!shouldOpen));
+      accountMenuButton.setAttribute("aria-expanded", String(shouldOpen));
+      if (shouldOpen) closeAccountDrawerButton.focus();
+      else if (wasOpen && !accountMenuButton.hidden) accountMenuButton.focus();
+    }
+
+    function showConversationTitle(title) {
+      activeConversationTitle.textContent = title;
+      activeConversationTitle.hidden = false;
+      activeConversationHeader.hidden = !currentConversationId;
+      renameConversationForm.hidden = true;
+      renameConversationButton.hidden = !currentConversationId;
+    }
+
+    function resetConversationView() {
+      currentConversationId = null;
+      currentConversationTitle = "";
+      currentConversationTitleIsCustom = false;
+      conversationHistory = [];
+      lastProblem = "";
+      currentQuiz = null;
+      activeConversationTitle.textContent = "";
+      renameConversationInput.value = "";
+      activeConversationHeader.hidden = true;
+      renameConversationForm.hidden = true;
+      videoButton.disabled = true;
+      quizButton.disabled = true;
+      quizBox.replaceChildren();
+      quizBox.hidden = true;
+      chatLog.replaceChildren();
+      appendMessage("assistant", "Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.");
+    }
+
+    function updateHistoryControls() {
+      const disabled = isStudyRequestPending || isHistoryLoading || isConversationRenamePending ||
+        isPasswordChangePending || Boolean(pendingTurnSave);
+      newChatButton.disabled = disabled;
+      logoutButton.disabled = isStudyRequestPending || isConversationRenamePending || isPasswordChangePending ||
+        Boolean(pendingTurnSave);
+      changePasswordButton.disabled = disabled;
+      newAccountPassword.disabled = disabled;
+      togglePasswordVisibility.disabled = disabled;
+      renameConversationButton.disabled = disabled;
+      saveConversationTitleButton.disabled = disabled;
+      cancelConversationTitleButton.disabled = disabled;
+      conversationList.querySelectorAll("button").forEach((button) => { button.disabled = disabled; });
+      sendButton.disabled = disabled;
+    }
+
+    function renderConversationList() {
+      conversationList.replaceChildren();
+      if (!conversations.length) {
+        if (!historyStatus.textContent || historyStatus.classList.contains("error")) {
+          setHistoryStatus("Сохранённых разговоров пока нет.");
+        }
+        updateHistoryControls();
+        return;
+      }
+
+      conversations.forEach((conversation) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "conversation-item";
+        button.textContent = conversation.title;
+        button.setAttribute("aria-current", String(conversation.id === currentConversationId));
+        button.addEventListener("click", () => loadConversation(conversation.id));
+        conversationList.append(button);
+      });
+      updateHistoryControls();
+    }
+
+    async function loadConversationList(userId, generation) {
+      isHistoryLoading = true;
+      updateHistoryControls();
+      setHistoryStatus("Загружаю историю…");
+      try {
+        const { data, error } = await supabaseClient
+          .from("study_conversations")
+          .select("id, title, title_is_custom, updated_at")
+          .eq("user_id", userId)
+          .order("updated_at", { ascending: false });
+        if (error) throw error;
+        if (generation !== authGeneration || currentUserId !== userId) return;
+        conversations = data || [];
+        renderConversationList();
+        if (conversations.length) {
+          await loadConversation(conversations[0].id, generation);
+        } else {
+          resetConversationView();
+          setHistoryStatus("Сохранённых разговоров пока нет.");
+        }
+      } catch (error) {
+        if (generation !== authGeneration || currentUserId !== userId) return;
+        conversations = [];
+        renderConversationList();
+        setHistoryStatus(historyLoadErrorMessage(error), true);
+      } finally {
+        if (generation === authGeneration && currentUserId === userId) {
+          isHistoryLoading = false;
+          updateHistoryControls();
+        }
+      }
+    }
+
+    async function loadConversation(conversationId, generation = authGeneration) {
+      if (!currentUserId || pendingTurnSave || isStudyRequestPending) return;
+      const userId = currentUserId;
+      const loadGeneration = ++historyLoadGeneration;
+      isHistoryLoading = true;
+      setHistoryStatus("Открываю разговор…");
+      updateHistoryControls();
+      try {
+        const { data, error } = await supabaseClient
+          .from("study_messages")
+          .select("role, content, message_order")
+          .eq("conversation_id", conversationId)
+          .eq("user_id", userId)
+          .order("message_order", { ascending: true });
+        if (error) throw error;
+        if (generation !== authGeneration || currentUserId !== userId ||
+          loadGeneration !== historyLoadGeneration) return;
+        const conversation = conversations.find((item) => item.id === conversationId);
+        if (!conversation) throw new Error("Разговор не найден в истории.");
+        currentConversationId = conversation.id;
+        currentConversationTitle = conversation.title;
+        currentConversationTitleIsCustom = conversation.title_is_custom;
+        showConversationTitle(currentConversationTitle);
+        conversationHistory = (data || []).map((message) => ({
+          role: message.role === "assistant" ? "model" : "user",
+          text: message.content
+        }));
+        lastProblem = [...conversationHistory].reverse().find((message) => message.role === "user")?.text || "";
         currentQuiz = null;
-        videoButton.disabled = true;
-        quizButton.disabled = true;
         quizBox.replaceChildren();
         quizBox.hidden = true;
         chatLog.replaceChildren();
-        appendMessage("assistant", "Напиши условие задачи и предмет. Я объясню решение по шагам и помогу разобраться.");
+        if (data && data.length) {
+          data.forEach((message) => appendMessage(message.role, message.content));
+        } else {
+          appendMessage("assistant", "В этом разговоре пока нет сообщений.");
+        }
+        videoButton.disabled = !lastProblem;
+        quizButton.disabled = !lastProblem;
+        setAccountDrawerOpen(false);
+        setHistoryStatus("");
+        renderConversationList();
+      } catch (error) {
+        if (generation === authGeneration && currentUserId === userId &&
+          loadGeneration === historyLoadGeneration) {
+          setHistoryStatus(historyLoadErrorMessage(error), true);
+        }
+      } finally {
+        if (generation === authGeneration && currentUserId === userId &&
+          loadGeneration === historyLoadGeneration) isHistoryLoading = false;
+        updateHistoryControls();
+      }
+    }
+
+    function showAccount(user) {
+      const userId = user ? user.id : null;
+      if (userId === currentUserId) return;
+      currentUserId = userId;
+      const generation = ++authGeneration;
+      historyLoadGeneration++;
+      const signedIn = Boolean(userId);
+      authPanel.hidden = signedIn;
+      studyPanel.hidden = !signedIn;
+      accountMenuButton.hidden = !signedIn;
+      setAccountDrawerOpen(false);
+      clearStudyAttachment();
+      pendingTurnSave = null;
+      isHistoryLoading = false;
+      isStudyRequestPending = false;
+      isConversationRenamePending = false;
+      isPasswordChangePending = false;
+      studyRequestGeneration++;
+      conversationRenameGeneration++;
+      retrySaveButton.hidden = true;
+      retrySaveButton.disabled = false;
+      passwordChangeForm.reset();
+      newAccountPassword.type = "password";
+      togglePasswordVisibility.textContent = "Показать";
+      togglePasswordVisibility.setAttribute("aria-pressed", "false");
+      setAccountStatus("");
+      conversations = [];
+      conversationList.replaceChildren();
+      resetConversationView();
+      studyGalleryButton.disabled = false;
+      studyCameraButton.disabled = false;
+      sendButton.disabled = false;
+      setStudyStatus("");
+      if (signedIn) {
+        accountEmail.textContent = user.email || "Адрес не указан";
+        setHistoryStatus("Загружаю историю…");
+        void loadConversationList(userId, generation);
+      } else {
+        accountEmail.textContent = "";
+        setHistoryStatus("");
+        updateHistoryControls();
       }
     }
 
@@ -1309,6 +1660,221 @@
       }
       if (!data) throw new Error("Сервер не вернул ответ. Попробуй ещё раз.");
       return data;
+    }
+
+    function normalizeConversationTitle(value) {
+      if (typeof value !== "string") throw new Error("Название разговора должно быть текстом.");
+      const title = value.replace(/\s+/g, " ").trim();
+      if (!title || title.length > 120) {
+        throw new Error("Название должно содержать от 1 до 120 символов.");
+      }
+      return title;
+    }
+
+    function makeTurnSave(
+      userId,
+      conversationId,
+      conversationTitle,
+      conversationTitleIsCustom,
+      suggestedTitle,
+      problem,
+      answer
+    ) {
+      const id = conversationId || crypto.randomUUID();
+      const title = conversationTitleIsCustom
+        ? conversationTitle
+        : normalizeConversationTitle(suggestedTitle);
+      const now = new Date().toISOString();
+      return {
+        userId,
+        conversation: {
+          id,
+          user_id: userId,
+          title,
+          title_is_custom: conversationTitleIsCustom,
+          updated_at: now
+        },
+        messages: [
+          {
+            id: crypto.randomUUID(),
+            conversation_id: id,
+            user_id: userId,
+            role: "user",
+            content: problem
+          },
+          {
+            id: crypto.randomUUID(),
+            conversation_id: id,
+            user_id: userId,
+            role: "assistant",
+            content: answer
+          }
+        ]
+      };
+    }
+
+    async function persistStudyTurn(turn) {
+      const { error: conversationError } = await supabaseClient
+        .from("study_conversations")
+        .upsert(turn.conversation, { onConflict: "id", ignoreDuplicates: true });
+      if (conversationError) throw conversationError;
+
+      const { error: messagesError } = await supabaseClient
+        .from("study_messages")
+        .upsert(turn.messages, { onConflict: "id", ignoreDuplicates: true });
+      if (messagesError) throw messagesError;
+
+      const { error: updateError } = await supabaseClient
+        .from("study_conversations")
+        .update({
+          title: turn.conversation.title,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", turn.conversation.id)
+        .eq("user_id", turn.userId)
+        .eq("title_is_custom", false);
+      if (updateError) throw updateError;
+
+      const { data: persistedConversation, error: readError } = await supabaseClient
+        .from("study_conversations")
+        .select("id, title, title_is_custom, updated_at")
+        .eq("id", turn.conversation.id)
+        .eq("user_id", turn.userId)
+        .single();
+      if (readError) throw readError;
+
+      if (currentUserId !== turn.userId) return;
+      currentConversationId = turn.conversation.id;
+      currentConversationTitle = persistedConversation.title;
+      currentConversationTitleIsCustom = persistedConversation.title_is_custom;
+      showConversationTitle(currentConversationTitle);
+      const existing = conversations.find((item) => item.id === turn.conversation.id);
+      if (existing) {
+        existing.title = persistedConversation.title;
+        existing.title_is_custom = persistedConversation.title_is_custom;
+        existing.updated_at = persistedConversation.updated_at;
+      } else {
+        conversations.push({ ...persistedConversation });
+      }
+      conversations.sort((first, second) => Date.parse(second.updated_at) - Date.parse(first.updated_at));
+      renderConversationList();
+    }
+
+    async function retryStudyTurnSave() {
+      if (!pendingTurnSave || pendingTurnSave.userId !== currentUserId) return;
+      const turn = pendingTurnSave;
+      retrySaveButton.disabled = true;
+      setStudyStatus("Повторяю сохранение разговора…");
+      try {
+        await persistStudyTurn(turn);
+        if (pendingTurnSave !== turn || currentUserId !== turn.userId) return;
+        pendingTurnSave = null;
+        retrySaveButton.hidden = true;
+        setStudyStatus("Разговор сохранён. Можно продолжить.");
+      } catch (error) {
+        if (currentUserId === turn.userId && pendingTurnSave === turn) {
+          setStudyStatus(`Не удалось сохранить разговор: ${error.message}`, true);
+        }
+      } finally {
+        retrySaveButton.disabled = false;
+        updateHistoryControls();
+      }
+    }
+
+    function closeConversationRename() {
+      renameConversationForm.hidden = true;
+      activeConversationTitle.hidden = false;
+      renameConversationButton.hidden = !currentConversationId;
+    }
+
+    async function saveConversationTitle(event) {
+      event.preventDefault();
+      if (!currentConversationId || !currentUserId || isConversationRenamePending) return;
+
+      let title;
+      try {
+        title = normalizeConversationTitle(renameConversationInput.value);
+      } catch (error) {
+        setStudyStatus(error.message, true);
+        renameConversationInput.focus();
+        return;
+      }
+
+      const conversationId = currentConversationId;
+      const userId = currentUserId;
+      const authRequestGeneration = authGeneration;
+      const requestGeneration = ++conversationRenameGeneration;
+      isConversationRenamePending = true;
+      updateHistoryControls();
+      setStudyStatus("Сохраняю название…");
+      try {
+        const { data, error } = await supabaseClient
+          .from("study_conversations")
+          .update({ title, title_is_custom: true })
+          .eq("id", conversationId)
+          .eq("user_id", userId)
+          .select("id, title, title_is_custom, updated_at")
+          .single();
+        if (error) throw error;
+        if (requestGeneration !== conversationRenameGeneration || authRequestGeneration !== authGeneration ||
+          userId !== currentUserId) return;
+
+        currentConversationTitle = data.title;
+        currentConversationTitleIsCustom = data.title_is_custom;
+        showConversationTitle(currentConversationTitle);
+        const conversation = conversations.find((item) => item.id === conversationId);
+        if (conversation) {
+          conversation.title = data.title;
+          conversation.title_is_custom = data.title_is_custom;
+        }
+        renderConversationList();
+        setStudyStatus("Название разговора сохранено.");
+      } catch (error) {
+        if (requestGeneration === conversationRenameGeneration && authRequestGeneration === authGeneration &&
+          userId === currentUserId) {
+          setStudyStatus(`Не удалось сохранить название: ${error.message}`, true);
+        }
+      } finally {
+        if (requestGeneration === conversationRenameGeneration) {
+          isConversationRenamePending = false;
+          updateHistoryControls();
+        }
+      }
+    }
+
+    async function changeAccountPassword(event) {
+      event.preventDefault();
+      if (!currentUserId || isPasswordChangePending) return;
+      if (newAccountPassword.value.length < 6) {
+        setAccountStatus("Новый пароль должен содержать не меньше 6 символов.", true);
+        newAccountPassword.focus();
+        return;
+      }
+
+      const requestUserId = currentUserId;
+      const requestGeneration = authGeneration;
+      isPasswordChangePending = true;
+      updateHistoryControls();
+      setAccountStatus("Меняю пароль…");
+      try {
+        const { error } = await supabaseClient.auth.updateUser({ password: newAccountPassword.value });
+        if (error) throw error;
+        if (requestUserId !== currentUserId || requestGeneration !== authGeneration) return;
+        passwordChangeForm.reset();
+        newAccountPassword.type = "password";
+        togglePasswordVisibility.textContent = "Показать";
+        togglePasswordVisibility.setAttribute("aria-pressed", "false");
+        setAccountStatus("Пароль успешно изменён.");
+      } catch (error) {
+        if (requestUserId === currentUserId && requestGeneration === authGeneration) {
+          setAccountStatus(`Не удалось сменить пароль: ${error.message}`, true);
+        }
+      } finally {
+        if (requestUserId === currentUserId && requestGeneration === authGeneration) {
+          isPasswordChangePending = false;
+          updateHistoryControls();
+        }
+      }
     }
 
     if (!window.supabase) {
@@ -1378,6 +1944,10 @@
     });
 
     logoutButton.addEventListener("click", async () => {
+      if (pendingTurnSave) {
+        setStudyStatus("Сначала сохрани разговор или повтори попытку сохранения, затем выйди из аккаунта.", true);
+        return;
+      }
       logoutButton.disabled = true;
       try {
         const { error } = await supabaseClient.auth.signOut();
@@ -1385,13 +1955,47 @@
         showAccount(null);
         setAuthStatus("Ты вышел из аккаунта.");
       } catch (error) {
-        studyStatus.textContent = `Не удалось выйти: ${error.message}`;
-        studyStatus.classList.add("error");
+        setStudyStatus(`Не удалось выйти: ${error.message}`, true);
       } finally {
-        logoutButton.disabled = false;
+        updateHistoryControls();
       }
     });
 
+    newChatButton.addEventListener("click", () => {
+      if (pendingTurnSave || isStudyRequestPending || isHistoryLoading) return;
+      resetConversationView();
+      renderConversationList();
+      setStudyStatus("");
+      setHistoryStatus(conversations.length ? "Начни новый разговор." : "Сохранённых разговоров пока нет.");
+      setAccountDrawerOpen(false);
+    });
+
+    accountMenuButton.addEventListener("click", () => setAccountDrawerOpen(true));
+    closeAccountDrawerButton.addEventListener("click", () => setAccountDrawerOpen(false));
+    accountDrawerBackdrop.addEventListener("click", () => setAccountDrawerOpen(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !accountDrawer.hidden) setAccountDrawerOpen(false);
+    });
+    togglePasswordVisibility.addEventListener("click", () => {
+      const isVisible = newAccountPassword.type === "text";
+      newAccountPassword.type = isVisible ? "password" : "text";
+      togglePasswordVisibility.textContent = isVisible ? "Показать" : "Скрыть";
+      togglePasswordVisibility.setAttribute("aria-pressed", String(!isVisible));
+      newAccountPassword.focus();
+    });
+    passwordChangeForm.addEventListener("submit", changeAccountPassword);
+
+    renameConversationButton.addEventListener("click", () => {
+      if (!currentConversationId || isConversationRenamePending) return;
+      renameConversationInput.value = currentConversationTitle;
+      activeConversationTitle.hidden = true;
+      renameConversationButton.hidden = true;
+      renameConversationForm.hidden = false;
+      renameConversationInput.focus();
+    });
+    renameConversationForm.addEventListener("submit", saveConversationTitle);
+    cancelConversationTitleButton.addEventListener("click", closeConversationRename);
+    retrySaveButton.addEventListener("click", retryStudyTurnSave);
     studyGalleryButton.addEventListener("click", () => studyGallery.click());
     studyCameraButton.addEventListener("click", () => studyCamera.click());
     studyGallery.addEventListener("change", () => selectStudyImage(studyGallery));
@@ -1404,32 +2008,50 @@
 
     studyForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!currentUserId) {
+        setStudyStatus("Войди в аккаунт, чтобы начать заниматься.", true);
+        return;
+      }
+      if (pendingTurnSave) {
+        setStudyStatus("Сначала сохрани предыдущий ответ, затем продолжай разговор.", true);
+        return;
+      }
       const problem = problemInput.value.trim();
       const image = pendingStudyImage;
       if (!problem && !image) {
-        studyStatus.textContent = "Напиши вопрос или прикрепи изображение.";
-        studyStatus.classList.add("error");
+        setStudyStatus("Напиши вопрос или прикрепи изображение.", true);
         return;
       }
       lastProblem = problem || "задача на изображении";
+      const requestUserId = currentUserId;
+      const requestAuthGeneration = authGeneration;
+      const requestGeneration = ++studyRequestGeneration;
+      const requestConversationId = currentConversationId;
+      const requestConversationTitle = currentConversationTitle;
+      const requestConversationTitleIsCustom = currentConversationTitleIsCustom;
+      const requestHistory = conversationHistory.slice(-8);
+      isStudyRequestPending = true;
+      updateHistoryControls();
       sendButton.disabled = true;
       studyGalleryButton.disabled = true;
       studyCameraButton.disabled = true;
       videoButton.disabled = true;
       quizButton.disabled = true;
       quizBox.hidden = true;
-      studyStatus.classList.remove("error");
-      studyStatus.textContent = "Подбираю объяснение…";
+      setStudyStatus("Подбираю объяснение…");
       try {
         const imageData = image ? await readStudyImage(image) : undefined;
         const payload = {
           mode: "explain",
           problem,
-          history: conversationHistory.slice(-8),
+          history: requestHistory,
           ...(image ? { image: { mimeType: image.type, data: imageData } } : {}),
         };
         const answer = await invokeTutor(payload);
         if (typeof answer.text !== "string" || !answer.text.trim()) throw new Error("В ответе помощника нет текста.");
+        const suggestedTitle = normalizeConversationTitle(answer.title);
+        if (requestGeneration !== studyRequestGeneration || requestAuthGeneration !== authGeneration ||
+          requestUserId !== currentUserId) return;
         const displayedProblem = problem || "Объясни задачу на изображении";
         appendMessage("user", displayedProblem, imageData ? `data:${image.type};base64,${imageData}` : undefined);
         appendMessage("assistant", answer.text);
@@ -1438,14 +2060,46 @@
         clearStudyAttachment();
         videoButton.disabled = false;
         quizButton.disabled = false;
-        studyStatus.textContent = "Объяснение готово. Можно задать следующий вопрос, найти видео или пройти тест.";
+        const turn = makeTurnSave(
+          requestUserId,
+          requestConversationId,
+          requestConversationTitle,
+          requestConversationTitleIsCustom,
+          suggestedTitle,
+          displayedProblem,
+          answer.text
+        );
+        currentConversationId = turn.conversation.id;
+        currentConversationTitle = turn.conversation.title;
+        currentConversationTitleIsCustom = turn.conversation.title_is_custom;
+        showConversationTitle(currentConversationTitle);
+        try {
+          await persistStudyTurn(turn);
+          if (requestGeneration === studyRequestGeneration && requestAuthGeneration === authGeneration &&
+            requestUserId === currentUserId) {
+            setStudyStatus("Объяснение сохранено. Можно продолжить разговор, найти видео или пройти тест.");
+          }
+        } catch (error) {
+          if (requestGeneration === studyRequestGeneration && requestAuthGeneration === authGeneration &&
+            requestUserId === currentUserId) {
+            pendingTurnSave = turn;
+            retrySaveButton.hidden = false;
+            setStudyStatus(`Ответ получен, но не удалось сохранить разговор: ${error.message}`, true);
+          }
+        }
       } catch (error) {
-        studyStatus.textContent = `Не получилось получить объяснение: ${error.message}`;
-        studyStatus.classList.add("error");
+        if (requestGeneration === studyRequestGeneration && requestAuthGeneration === authGeneration &&
+          requestUserId === currentUserId) {
+          setStudyStatus(`Не получилось получить объяснение: ${error.message}`, true);
+        }
       } finally {
-        sendButton.disabled = false;
-        studyGalleryButton.disabled = false;
-        studyCameraButton.disabled = false;
+        if (requestGeneration === studyRequestGeneration) {
+          isStudyRequestPending = false;
+          sendButton.disabled = Boolean(pendingTurnSave);
+          studyGalleryButton.disabled = Boolean(pendingTurnSave);
+          studyCameraButton.disabled = Boolean(pendingTurnSave);
+          updateHistoryControls();
+        }
       }
     });
 
